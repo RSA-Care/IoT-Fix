@@ -2,6 +2,7 @@
 #define DHT22_H
 
 #include <Arduino.h>
+#include "../OLED/OLED.h"
 
 // Define DHT pin and sensor type
 #define DHTPIN 18

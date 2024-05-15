@@ -8,6 +8,7 @@ HardwareSerial SerialAT(2);
 void A9GBegin()
 {
   SerialAT.begin(115200);
+  clearScreen();
   Serial.println("A9G module started");
 
   sendAT();
@@ -20,6 +21,7 @@ void A9GBegin()
 
   Serial.println("Starting GPS.");
   sendAT("AT+GPS=1");
+
   SerialAT.println("AT+GPS?");
   delay(500);
   if (SerialAT.available())
@@ -37,6 +39,9 @@ void A9GBegin()
       Serial.println("GPS not started.");
     }
   }
+
+  Serial.println("Checking Operator Selection.");
+  sendAT("AT+COPS?");
 
   Serial.println("Checking Network Registration.");
   SerialAT.println("AT+CREG?");
@@ -56,13 +61,13 @@ void A9GBegin()
     }
   }
 
-  Serial.println("Activating GPRS.");
-  sendAT("AT+CGATT=1");
-  sendAT("AT+CGATT?");
-
   Serial.println("Configuring GPRS.");
   sendAT("AT+CGDCONT=1, \"IP\", \"internet\"");
   sendAT("AT+CGDCONT?");
+
+  Serial.println("Activating GPRS.");
+  sendAT("AT+CGATT=1");
+  sendAT("AT+CGATT?");
 
   Serial.println("Activating and Checking GPRS PDP Context.");
   sendAT("AT+CGACT=1,1");
@@ -95,7 +100,10 @@ void getInfo()
 
 void sendAT(String command)
 {
-  Serial.println(command);
+  clearScreen();
+
+  Serial.println("==========");
+  println(command);
   SerialAT.println(command);
   delay(500);
 
@@ -107,7 +115,11 @@ void sendAT(String command)
   }
 
   String response = SerialAT.readString();
-  Serial.println(response);
+  response.trim();
+  println(response);
+  Serial.println("==========");
+
+  delay(1000);
 }
 
 gpsReading getGPS()
