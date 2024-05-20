@@ -19,6 +19,7 @@ typedef struct
 void A9GBegin();
 void sendAT(String command = "AT");
 void getInfo();
+bool checkConnection();
 gpsReading getGPS();
 
 #endif // A9G_h
