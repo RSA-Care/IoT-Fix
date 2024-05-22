@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <PubSubClient.h>
 #include <WiFi.h>
+#include "WiFi/WiFiconn.h"
 #include "OLED/OLED.h"
 
 #define broker_url "35.209.3.73"

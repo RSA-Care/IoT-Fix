@@ -6,6 +6,7 @@
 #include "OLED/OLED.h"
 
 void WiFibegin(const char *SSID, const char *PASS);
+void WiFiReconnect();
 bool checkConnection();
 
 #endif // WiFiconn_h

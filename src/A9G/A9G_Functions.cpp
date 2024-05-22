@@ -72,6 +72,9 @@ void A9GBegin()
     }
   }
 
+  Serial.println("Checking chip status");
+  sendAT("AT+CIPSTATUS?");
+
   Serial.println("Starting GPS.");
   sendAT("AT+GPS=1");
 
@@ -92,9 +95,6 @@ void A9GBegin()
       println("GPS not started.");
     }
   }
-
-  Serial.println("Set GPS interval to 5 Second.");
-  SerialAT.println("AT+GPSRD=5");
 }
 
 void getInfo()
@@ -126,11 +126,30 @@ void sendAT(String command)
   delay(1000);
 }
 
+String getValue(String data, char separator, int index) // the same as split function in python or nodejs
+{
+  int found = 0;
+  int strIndex[] = {0, -1};
+  int maxIndex = data.length() - 1;
+
+  for (int i = 0; i <= maxIndex && found <= index; i++)
+  {
+    if (data.charAt(i) == separator || i == maxIndex)
+    {
+      found++;
+      strIndex[0] = strIndex[1] + 1;
+      strIndex[1] = (i == maxIndex) ? i + 1 : i;
+    }
+  }
+
+  return found > index ? data.substring(strIndex[0], strIndex[1]) : "";
+}
+
 gpsReading getGPS()
 {
   /*
   Use this to get the latitude and longitude coordinate
-  AT+LOCATION=1
+  AT+LOCATION=2
 
   return:
   <latitude>,<longitude>
@@ -139,26 +158,22 @@ gpsReading getGPS()
   */
 
   Serial.println("Checking GPS data.");
+  SerialAT.println("AT+LOCATION=2");
+  delay(500);
   gpsReading gps;
 
   delay(500);
   if (SerialAT.available())
   {
     String response = SerialAT.readString();
+
+    response.replace("\n", "");
+    response.replace("OK", "");
+
     Serial.println(response);
 
-    char data = SerialAT.read();
-    if (_gps.encode(data))
-    {
-      if (_gps.location.isValid())
-      {
-        Serial.println("GPS Data.");
-        gps.latitude = _gps.location.lat();
-        gps.longitude = _gps.location.lng();
-        Serial.println("Latitude: " + String(gps.latitude));
-        Serial.println("Longitude: " + String(gps.longitude));
-      }
-    }
+    gps.latitude = getValue(response, ',', 0).toFloat();
+    gps.longitude = getValue(response, ',', 1).toFloat();
   }
 
   return gps;

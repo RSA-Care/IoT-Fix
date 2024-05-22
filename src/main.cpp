@@ -5,8 +5,8 @@
 #include "WiFi/WiFiconn.h"
 #include "MQTT/MQTT.h"
 
-#define SSID "bahagia permai"
-#define PASS "imut2023"
+#define SSID "Ahda's"
+#define PASS "@hotspot.Personal"
 
 void setup()
 {
@@ -35,11 +35,15 @@ void loop()
 
     publish(payload.c_str());
   }
+  else
+  {
+    MQTTReconnect();
+  }
 
   clearScreen();
   println("Latitude: " + String(gps.latitude));
   println("Longitude: " + String(gps.longitude));
   println("Temperature: " + String(dht.temperatureC));
   println("Humidity: " + String(dht.humidity));
-  delay(1000);
+  delay(10000);
 }

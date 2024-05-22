@@ -22,9 +22,32 @@ void MQTTbegin()
   else
   {
     Serial.println("[ - ] Failed to connect to MQTT");
+    MQTTReconnect();
   }
 
   statusCheck();
+}
+
+void MQTTReconnect()
+{
+  Serial.print("Attempting MQTT reconnect...");
+  int counter = 0;
+  while (!client.connected() && counter <= 30)
+  {
+    if (client.connect(clientId, user, pass))
+    {
+      Serial.println("\n[ + ] Reconnected to MQTT");
+    }
+    else
+    {
+      Serial.print(".");
+    }
+
+    counter++;
+    delay(500);
+  }
+
+  Serial.println("\n" + statusCheck());
 }
 
 bool MQTTConnection()
@@ -60,6 +83,7 @@ String statusCheck()
     break;
 
   case -2:
+    WiFiReconnect();
     errorStatus = "MQTT_CONNECT_FAILED - the network connection failed";
     break;
 
@@ -92,6 +116,7 @@ String statusCheck()
     break;
 
   default:
+    Serial.println("Unknown pubsub error.");
     break;
   }
 
@@ -104,7 +129,7 @@ void publish(const char *payload)
   {
     clearScreen();
     println("Reconnecting MQTT Client.");
-    // MQTTReconnect();
+    MQTTReconnect();
     delay(1000);
     return;
   }
