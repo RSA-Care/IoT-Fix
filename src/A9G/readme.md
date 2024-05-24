@@ -6,7 +6,7 @@ Library: No Supported Library (2024)
 
 - [x] Enabling GPS Function
 - [ ] Add function to connect to GPRS
-- [ ] Error Handling
+- [ ] Fix error when gps first initialized.
 
 ## Useful AT Commands
 

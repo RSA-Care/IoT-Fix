@@ -5,8 +5,8 @@
 #include "WiFi/WiFiconn.h"
 #include "MQTT/MQTT.h"
 
-#define SSID "Ahda's"
-#define PASS "@hotspot.Personal"
+#define SSID "Abbey"
+#define PASS "abbey123"
 
 void setup()
 {
@@ -15,8 +15,16 @@ void setup()
   oledBegin();
   dhtBegin();
   A9GBegin();
-  WiFibegin(SSID, PASS); // need to add check to switch between gprs connection and wifi connection
-  MQTTbegin();
+
+  if (GPRScheckConnection())
+  {
+    GPRSMQTTConnect();
+  }
+  else
+  {
+    WiFibegin(SSID, PASS); // need to add check to switch between gprs connection and wifi connection
+    MQTTbegin();
+  }
 
   clearScreen();
   println("=== Startup Finished");
@@ -26,24 +34,44 @@ void setup()
 
 void loop()
 {
-  gpsReading gps = getGPS();
-  DhtReading dht = dhtRead();
+  gpsReading gps = getGPS();  // getting gps data
+  DhtReading dht = dhtRead(); // getting dht data
 
-  if (MQTTConnection())
+  if (WiFi.status() == WL_CONNECTED) // check if WiFi is connected
   {
-    String payload = String(gps.longitude) + "," + String(gps.latitude) + "," + String(dht.temperatureC) + "," + String(dht.humidity);
+    if (MQTTConnection()) // checking mqtt connection
+    {
+      String payload = gps.longitude + "," + gps.latitude + "," + String(dht.temperatureC) + "," + String(dht.humidity);
 
-    publish(payload.c_str());
+      publish(payload.c_str());
+    }
+    else
+    {
+      MQTTReconnect();
+    }
   }
-  else
+  else // if not connected to WiFi use GPRS
   {
-    MQTTReconnect();
+    if (GPRScheckConnection()) // check gprs connection
+    {
+      if (GPRSMQTTConnectionCheck()) // check mqtt connection
+      {
+        String payload = gps.longitude + "," + gps.latitude + "," + String(dht.temperatureC) + "," + String(dht.humidity);
+        GPRSMQTTPublish(payload);
+      }
+      else
+      {
+        GPRSMQTTReconnect();
+      }
+    }
   }
+
+  delay(3000);
 
   clearScreen();
-  println("Latitude: " + String(gps.latitude));
-  println("Longitude: " + String(gps.longitude));
+  println("Latitude: " + gps.latitude);
+  println("Longitude: " + gps.longitude);
   println("Temperature: " + String(dht.temperatureC));
   println("Humidity: " + String(dht.humidity));
-  delay(10000);
+  delay(7000);
 }

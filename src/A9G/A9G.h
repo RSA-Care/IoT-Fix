@@ -11,15 +11,21 @@ const char gprsPass[] = "123wap";
 
 typedef struct
 {
-  float latitude;
-  float longitude;
+  String latitude;
+  String longitude;
 } gpsReading;
 
 // Function prototypes
 void A9GBegin();
 void sendAT(String command = "AT");
 void getInfo();
-bool checkConnection();
+bool GPRScheckConnection();
 gpsReading getGPS();
+
+// MQTT Functions
+bool GPRSMQTTConnect();
+void GPRSMQTTPublish(String payload);
+void GPRSMQTTReconnect();
+bool GPRSMQTTConnectionCheck();
 
 #endif // A9G_h

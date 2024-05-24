@@ -5,6 +5,9 @@
 TinyGPSPlus _gps;
 HardwareSerial SerialAT(2);
 
+bool CGATT = false;
+bool CGACT = false;
+
 void A9GBegin()
 {
   SerialAT.begin(115200);
@@ -50,25 +53,55 @@ void A9GBegin()
 
   Serial.println("Activating GPRS.");
   sendAT("AT+CGATT=1");
-  sendAT("AT+CGATT?");
+
+  // checking network attachment
+  SerialAT.println("AT+CGATT?");
+  clearScreen();
+  println("AT+CGATT?");
+  delay(1000);
+  if (SerialAT.available())
+  {
+    String response = SerialAT.readString();
+    response.replace("\n", "");
+    response.replace("OK", "");
+    response.replace(" ", "");
+    response.trim();
+
+    println(response);
+    if (response.equals("+CGATT:1") >= 0)
+    {
+      println("Network attached.");
+      CGATT = true;
+    }
+  }
 
   Serial.println("Configuring GPRS.");
   sendAT("AT+CGDCONT=1, \"IP\", \"internet\"");
   sendAT("AT+CGDCONT?");
 
   Serial.println("Activating and Checking GPRS PDP Context.");
+  clearScreen();
   sendAT("AT+CGACT=1,1");
   SerialAT.println("AT+CGACT?");
-  delay(500);
+  println("AT+CGACT?");
+  delay(1000);
   if (SerialAT.available())
   {
     String response = SerialAT.readString();
     Serial.println(response);
     response.replace("\n", "");
+    response.replace("OK", "");
+    response.replace(" ", "");
 
+    println(response);
     if (response.equals("+CGACT: 0,0") >= 0)
     {
       Serial.println("Failed to register PDP Context.");
+    }
+    else
+    {
+      Serial.println("PDP Context registered.");
+      CGACT = true;
     }
   }
 
@@ -126,7 +159,7 @@ void sendAT(String command)
   delay(1000);
 }
 
-String getValue(String data, char separator, int index) // the same as split function in python or nodejs
+String getValue(String data, char separator, int index) // the same as split function in python or nodejs #Currently not used
 {
   int found = 0;
   int strIndex[] = {0, -1};
@@ -169,12 +202,101 @@ gpsReading getGPS()
 
     response.replace("\n", "");
     response.replace("OK", "");
+    response.trim();
 
     Serial.println(response);
 
-    gps.latitude = getValue(response, ',', 0).toFloat();
-    gps.longitude = getValue(response, ',', 1).toFloat();
+    gps.latitude = response.substring(0, response.indexOf(","));
+    gps.longitude = response.substring(response.indexOf(",") + 1);
   }
 
   return gps;
+}
+
+bool GPRScheckConnection()
+{
+  Serial.println("Checking connection...");
+  if (CGACT && CGATT)
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+bool GPRSMQTTConnect()
+{
+  println("[ GPRS ] Connecting to MQTT server...");
+  SerialAT.println("AT+MQTTCONN=\"35.209.3.73\",1883,\"ESP32-Client-test\",120,0,\"admin\",\"hivemq\"");
+  delay(500);
+
+  if (SerialAT.available())
+  {
+    String response = SerialAT.readString();
+    println(response);
+
+    response.trim();
+
+    if (response == "OK")
+    {
+      return true;
+    }
+
+    return false;
+  }
+}
+
+void GPRSMQTTPublish(String payload)
+{
+  println("[ GPRS ] Publishing to MQTT server...");
+  SerialAT.println("AT+MQTTPUB=\"test\",0,\"" + payload + "\"");
+  delay(500);
+
+  if (SerialAT.available())
+  {
+    String response = SerialAT.readString();
+    println(response);
+  }
+}
+
+void GPRSMQTTReconnect()
+{
+  println("[ GPRS ] Reconnecting to MQTT server...");
+  SerialAT.println("AT+MQTTCONN=\"35.209.3.73\",1883,\"ESP32-Client-test\",120,0,\"admin\",\"hivemq\"");
+  if (SerialAT.available())
+  {
+    String response = SerialAT.readString();
+    println(response);
+
+    response.trim();
+
+    // Check for connected response if connected then return to main loop, loop for 30 times
+  }
+}
+
+bool GPRSMQTTConnectionCheck()
+{
+  /*
+  0: Connection to the MQTT broker is successful.
+  2: Connection failed due to invalid parameters.
+  3: Connection failed due to network error.
+  4: Connection failed due to authentication error (if username/password was used).
+  5: Connection is already active (if you try to connect when already connected).
+  */
+
+  println("[ GPRS ] Checking MQTT connection...");
+  SerialAT.println("AT+MQTTCONNSTAT?");
+  delay(500);
+  if (SerialAT.available())
+  {
+    String response = SerialAT.readString();
+    response.trim();
+    println(response);
+
+    // check for response and if necessary loop to reconnect
+  }
+
+  return false;
 }
