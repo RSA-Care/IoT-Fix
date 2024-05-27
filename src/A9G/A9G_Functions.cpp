@@ -198,16 +198,26 @@ gpsReading getGPS()
   delay(500);
   if (SerialAT.available())
   {
-    String response = SerialAT.readString();
-
-    response.replace("\n", "");
-    response.replace("OK", "");
+    String response = SerialAT.readStringUntil('\n');
     response.trim();
 
-    Serial.println(response);
+    if (response.indexOf("ERROR") == -1 && response.indexOf("INVALID") == -1)
+    {
+      // response.replace("\n", "");
+      // response.replace("OK", "");
+      // response.trim();
 
-    gps.latitude = response.substring(0, response.indexOf(","));
-    gps.longitude = response.substring(response.indexOf(",") + 1);
+      Serial.println(response);
+
+      gps.latitude = response.substring(0, response.indexOf(","));
+      gps.longitude = response.substring(response.indexOf(",") + 1);
+    }
+    else
+    {
+      Serial.println("No GPS data.");
+      gps.latitude = "0";
+      gps.longitude = "0";
+    }
   }
 
   return gps;
