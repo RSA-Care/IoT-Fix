@@ -139,7 +139,7 @@ void sendAT(String command)
 {
   clearScreen();
 
-  Serial.println("==========");
+  Serial.println("=== " + command + " ===");
   println(command);
   SerialAT.println(command);
   delay(500);
@@ -154,7 +154,13 @@ void sendAT(String command)
   String response = SerialAT.readString();
   response.trim();
   println(response);
-  Serial.println("==========");
+  Serial.print("====");
+  for (int i = 0; i < command.length(); i++)
+  {
+    Serial.print("=");
+  }
+  Serial.print("====");
+  Serial.println();
 
   delay(1000);
 }
@@ -198,10 +204,12 @@ gpsReading getGPS()
   delay(500);
   if (SerialAT.available())
   {
-    String response = SerialAT.readStringUntil('\n');
+    String response = SerialAT.readString();
+    response.replace("\n", "");
+    response.replace("OK", "");
     response.trim();
 
-    if (response.indexOf("ERROR") == -1 && response.indexOf("INVALID") == -1)
+    if (response.indexOf("GPS NOT FIX NOW") == -1 && response.indexOf("ERROR") == -1 && response.indexOf("INVALID") == -1)
     {
       // response.replace("\n", "");
       // response.replace("OK", "");
@@ -214,9 +222,14 @@ gpsReading getGPS()
     }
     else
     {
-      Serial.println("No GPS data.");
-      gps.latitude = "0";
-      gps.longitude = "0";
+      Serial.println("\n=== UNEXPECTED ERROR ===");
+      Serial.println(response);
+      Serial.println("No GPS data recieved.");
+      Serial.println("========================\n");
+
+      // Set the coordinate to 0,0 when error occured
+      gps.latitude = "0.00";
+      gps.longitude = "0.00";
     }
   }
 
@@ -242,6 +255,8 @@ bool GPRSMQTTConnect()
   SerialAT.println("AT+MQTTCONN=\"35.209.3.73\",1883,\"ESP32-Client-test\",120,0,\"admin\",\"hivemq\"");
   delay(500);
 
+  bool state = false;
+
   if (SerialAT.available())
   {
     String response = SerialAT.readString();
@@ -251,11 +266,13 @@ bool GPRSMQTTConnect()
 
     if (response == "OK")
     {
-      return true;
+      state = true;
     }
 
-    return false;
+    state = false;
   }
+
+  return state;
 }
 
 void GPRSMQTTPublish(String payload)

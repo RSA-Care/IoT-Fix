@@ -32,7 +32,7 @@ void MQTTReconnect()
 {
   Serial.print("Attempting MQTT reconnect...");
   int counter = 0;
-  while (!client.connected() && counter <= 30)
+  while (!client.connected() && counter <= 10)
   {
     if (client.connect(clientId, user, pass))
     {
@@ -44,7 +44,6 @@ void MQTTReconnect()
     }
 
     counter++;
-    delay(500);
   }
 
   Serial.println("\n" + statusCheck());

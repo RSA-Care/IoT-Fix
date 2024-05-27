@@ -5,8 +5,11 @@
 #include "WiFi/WiFiconn.h"
 #include "MQTT/MQTT.h"
 
-#define SSID "Abbey"
-#define PASS "abbey123"
+// #define SSID "Abbey"
+// #define PASS "abbey123"
+
+#define SSID "Ahda's"
+#define PASS "@hotspot.Personal"
 
 void setup()
 {
