@@ -8,8 +8,8 @@
 // #define SSID "Abbey"
 // #define PASS "abbey123"
 
-#define SSID "Ahda's"
-#define PASS "@hotspot.Personal"
+#define SSID "AHDA 4434"
+#define PASS "Ahda@hotspot"
 
 void setup()
 {
@@ -17,17 +17,34 @@ void setup()
 
   oledBegin();
   dhtBegin();
+  WiFibegin(SSID, PASS);
   A9GBegin();
 
-  if (GPRScheckConnection())
+  /*
+  Check if wifi is connected, if not then use gsm
+  */
+  if (WiFi.status() == WL_CONNECTED)
   {
-    GPRSMQTTConnect();
+    IPAddress ip_local = WiFi.localIP();
+    clearScreen();
+    println(ip_local.toString());
+    println("Starting MQTT.");
+    delay(1000);
+    MQTTbegin();
   }
   else
   {
-    WiFibegin(SSID, PASS); // need to add check to switch between gprs connection and wifi connection
-    MQTTbegin();
+    clearScreen();
+    println("WiFi not connected.\nStarting GSM.");
+    delay(1000);
+    if (GPRScheckConnection())
+    {
+      println("Starting MQTT.");
+      GPRSMQTTConnect();
+    }
   }
+
+  GPSbegin(); // Starting GPS
 
   clearScreen();
   println("=== Startup Finished");
@@ -40,7 +57,7 @@ void loop()
   gpsReading gps = getGPS();  // getting gps data
   DhtReading dht = dhtRead(); // getting dht data
 
-  if (WiFi.status() == WL_CONNECTED) // check if WiFi is connected
+  if (checkWiFiConnection()) // check if WiFi is connected
   {
     if (MQTTConnection()) // checking mqtt connection
     {
@@ -66,6 +83,9 @@ void loop()
       {
         GPRSMQTTReconnect();
       }
+    }
+    else
+    {
     }
   }
 

@@ -9,3 +9,10 @@ The end goal for this project is to be able to help parents who had kids with do
 > 1.  [ESP32 GPS Tracker](https://github.com/RSA-Care/IoT-Fix.git)
 > 2.  [Mobile App](https://github.com/RSA-Care/Mobapp.git)
 > 3.  [Web App](https://github.com/RSA-Care/Website.git)
+
+## Important functions
+
+1. `A9GBegin();` → A9G Starting sequence
+2. `GPRSMQTTConnect();` → MQTT module connection sequence using A9G GSM connection
+3. `WiFibegin();` → WiFi starting sequence
+4. `MQTTBegin();` → MQTT module connecting sequence using WiFi connection

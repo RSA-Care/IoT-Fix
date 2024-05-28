@@ -7,6 +7,6 @@
 
 void WiFibegin(const char *SSID, const char *PASS);
 void WiFiReconnect();
-bool checkConnection();
+bool checkWiFiConnection();
 
 #endif // WiFiconn_h

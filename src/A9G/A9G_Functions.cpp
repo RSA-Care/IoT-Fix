@@ -94,7 +94,7 @@ void A9GBegin()
     response.replace(" ", "");
 
     println(response);
-    if (response.equals("+CGACT: 0,0") >= 0)
+    if (response.equals("+CGACT:0,0"))
     {
       Serial.println("Failed to register PDP Context.");
     }
@@ -107,27 +107,6 @@ void A9GBegin()
 
   Serial.println("Checking chip status");
   sendAT("AT+CIPSTATUS?");
-
-  Serial.println("Starting GPS.");
-  sendAT("AT+GPS=1");
-
-  SerialAT.println("AT+GPS?");
-  delay(500);
-  if (SerialAT.available())
-  {
-    String response = SerialAT.readString();
-    Serial.println(response);
-    response.replace("\n", "");
-
-    if (response.equals("+GPS: 1") >= 0)
-    {
-      println("GPS started.");
-    }
-    else
-    {
-      println("GPS not started.");
-    }
-  }
 }
 
 void getInfo()
@@ -184,6 +163,38 @@ String getValue(String data, char separator, int index) // the same as split fun
   return found > index ? data.substring(strIndex[0], strIndex[1]) : "";
 }
 
+bool GPSbegin()
+{
+  SerialAT.begin(115200);
+  println("=== GPS ===");
+  sendAT("AT+CREG=1");
+
+  bool state = false;
+
+  sendAT("AT+GPS=1");
+
+  SerialAT.println("AT+GPS?");
+  delay(500);
+  if (SerialAT.available())
+  {
+    String response = SerialAT.readString();
+    response.trim();
+    Serial.println(response);
+
+    if (response.indexOf("+GPS: 1") != -1)
+    {
+      state = true;
+      println("GPS started.");
+    }
+    else
+    {
+      state = false;
+      println("GPS not started.");
+    }
+  }
+  return state;
+}
+
 gpsReading getGPS()
 {
   /*
@@ -209,7 +220,7 @@ gpsReading getGPS()
     response.replace("OK", "");
     response.trim();
 
-    if (response.indexOf("GPS NOT FIX NOW") == -1 && response.indexOf("ERROR") == -1 && response.indexOf("INVALID") == -1)
+    if (response.indexOf("+LOCATION") == -1 && response.indexOf("ERROR") == -1 && response.indexOf("INVALID") == -1)
     {
       // response.replace("\n", "");
       // response.replace("OK", "");

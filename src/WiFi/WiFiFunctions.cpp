@@ -26,27 +26,30 @@ void WiFibegin(const char *SSID, const char *PASS)
   {
     println("\nConnected");
   }
+  else
+  {
+    println("\nWiFi not found.");
+  }
 }
 
 void WiFiReconnect()
 {
-  clearScreen();
   if (strlen(_SSID) == 0 || strlen(_PASS) == 0)
   {
     WiFi.begin(_SSID, _PASS);
   }
 
-  print("WiFi reconnecting..");
+  Serial.print("WiFi reconnecting..");
   int counter = 0;
   while (WiFi.status() != WL_CONNECTED && counter <= 30)
   {
     counter++;
-    print(".");
+    Serial.print(".");
     delay(500);
   }
 }
 
-bool checkConnection()
+bool checkWiFiConnection()
 {
   if (WiFi.isConnected())
   {
