@@ -11,7 +11,8 @@
 // #define user "satria"
 // #define pass "gogombc23"
 
-#define broker_url "35.209.3.73"
+#define broker_url "34.30.152.206"
+// #define broker_url "https://hivemq-bzfymzxv6a-uc.a.run.app"
 #define user "admin"
 #define pass "hivemq"
 

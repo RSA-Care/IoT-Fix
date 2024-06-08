@@ -5,11 +5,14 @@
 #include "WiFi/WiFiconn.h"
 #include "MQTT/MQTT.h"
 
-// #define SSID "Abbey"
-// #define PASS "abbey123"
+#define SSID "Abbey"
+#define PASS "abbey123"
 
-#define SSID "AHDA 4434"
-#define PASS "Ahda@hotspot"
+// #define SSID "AHDA 4434"
+// #define PASS "Ahda@hotspot"
+
+// #define SSID "Apaweh"
+// #define PASS "langsungmasuk"
 
 void setup()
 {
@@ -70,23 +73,21 @@ void loop()
       MQTTReconnect();
     }
   }
-  else // if not connected to WiFi use GPRS
+  else if (GPRScheckConnection()) // if not connected to WiFi use GPRS
   {
-    if (GPRScheckConnection()) // check gprs connection
+    if (GPRSMQTTConnectionCheck()) // check mqtt connection
     {
-      if (GPRSMQTTConnectionCheck()) // check mqtt connection
-      {
-        String payload = gps.longitude + "," + gps.latitude + "," + String(dht.temperatureC) + "," + String(dht.humidity);
-        GPRSMQTTPublish(payload);
-      }
-      else
-      {
-        GPRSMQTTReconnect();
-      }
+      String payload = gps.longitude + "," + gps.latitude + "," + String(dht.temperatureC) + "," + String(dht.humidity);
+      GPRSMQTTPublish(payload);
     }
     else
     {
+      GPRSMQTTReconnect();
     }
+  }
+  else
+  {
+    WiFiReconnect();
   }
 
   delay(3000);

@@ -8,6 +8,8 @@ HardwareSerial SerialAT(2);
 bool CGATT = false;
 bool CGACT = false;
 
+unsigned long startTime = 0;
+
 void A9GBegin()
 {
   SerialAT.begin(115200);
@@ -24,84 +26,90 @@ void A9GBegin()
 
   sendAT("ATI");
 
-  Serial.println("Checking SIM Card Status.");
+  // Checking SIM Card Status.
   sendAT("AT+CPIN?");
 
-  Serial.println("Set result error message.");
+  // Set result error message.
   sendAT("AT+CMEE=2");
 
-  Serial.println("Checking Operator Selection.");
-  sendAT("AT+COPS?");
-
-  Serial.println("Checking Network Registration.");
-  SerialAT.println("AT+CREG?");
-  delay(500);
-  if (SerialAT.available())
+  // Checking Operator Selection.
+  // sendAT("AT+COPS?");
+  String cops = sendAT("AT+COPS?");
+  if (cops.indexOf("1") >= 0)
   {
-    String response = SerialAT.readString();
-    Serial.println(response);
-    response.replace("\n", "");
-    if (response.equals("+CREG: 1,1") >= 0)
-    {
-      println("Network registered.");
-    }
-    else
-    {
-      println("Network not registered.");
-    }
+    Serial.println("[ = ] INFO: SIM registered.");
   }
-
-  Serial.println("Activating GPRS.");
-  sendAT("AT+CGATT=1");
+  else if (cops.indexOf("0") >= 0)
+  {
+    Serial.println("[ = ] INFO: SIM unregistered.");
+    Serial.println("[ = ] INFO: Registering SIM..");
+    // String cops_reg = sendAT("AT+COPS=0");
+  }
+  else
+  {
+    Serial.println("[ = ] ERROR: SIM unregistered.");
+    Serial.println("[ = ] INFO: Registering SIM..");
+    String cops_reg = sendAT("AT+COPS=0");
+  }
 
   // checking network attachment
-  SerialAT.println("AT+CGATT?");
-  clearScreen();
-  println("AT+CGATT?");
-  delay(1000);
-  if (SerialAT.available())
+  String cgatt = sendAT("AT+CGATT=1");
+  if (cgatt.indexOf("ERROR") != -1)
   {
-    String response = SerialAT.readString();
-    response.replace("\n", "");
-    response.replace("OK", "");
-    response.replace(" ", "");
-    response.trim();
-
-    println(response);
-    if (response.equals("+CGATT:1") >= 0)
-    {
-      println("Network attached.");
-      CGATT = true;
-    }
+    println("Network failed to attach.");
+  }
+  else
+  {
+    println("Network attached.");
+    CGATT = true;
   }
 
-  Serial.println("Configuring GPRS.");
+  // Configuring GPRS.
   sendAT("AT+CGDCONT=1, \"IP\", \"internet\"");
   sendAT("AT+CGDCONT?");
 
   Serial.println("Activating and Checking GPRS PDP Context.");
   clearScreen();
-  sendAT("AT+CGACT=1,1");
-  SerialAT.println("AT+CGACT?");
-  println("AT+CGACT?");
+  SerialAT.println("AT+CGACT=1,1");
+  println("AT+CGACT=1,1");
   delay(1000);
   if (SerialAT.available())
   {
     String response = SerialAT.readString();
-    Serial.println(response);
-    response.replace("\n", "");
-    response.replace("OK", "");
-    response.replace(" ", "");
 
-    println(response);
-    if (response.equals("+CGACT:0,0"))
+    if (response.indexOf("ERROR") == -1)
     {
-      Serial.println("Failed to register PDP Context.");
+      println("PDP Context registered.");
+      CGACT = true;
     }
     else
     {
-      Serial.println("PDP Context registered.");
-      CGACT = true;
+      println("Failed to register PDP Context.");
+      Serial.println(response);
+
+      delay(5000);
+    }
+  }
+
+  // Checking Network Registration.
+  SerialAT.println("AT+CREG?");
+  delay(500);
+  while (!SerialAT.available())
+  {
+    if (SerialAT.available())
+    {
+      String response = SerialAT.readString();
+      Serial.println(response);
+      response.trim();
+      if (response.indexOf("+CREG: 1,1") != -1)
+      {
+        println("Network registered.");
+      }
+      else
+      {
+        println("Network not registered.");
+      }
+      delay(5000);
     }
   }
 
@@ -114,34 +122,51 @@ void getInfo()
   sendAT("ATI");
 }
 
-void sendAT(String command)
+String sendAT(String command)
 {
+  startTime = millis();
   clearScreen();
+  Serial.print("\n==== ");
+  Serial.print(command);
+  Serial.println(" ====");
 
-  Serial.println("=== " + command + " ===");
   println(command);
   SerialAT.println(command);
   delay(500);
-
+  Serial.println("Waiting response..");
   while (!SerialAT.available())
   {
-    Serial.println(command);
-    SerialAT.println(command);
-    delay(1000);
+    Serial.println(".");
+    delay(500);
   }
 
-  String response = SerialAT.readString();
-  response.trim();
-  println(response);
-  Serial.print("====");
-  for (int i = 0; i < command.length(); i++)
+  if (SerialAT.available())
   {
-    Serial.print("=");
-  }
-  Serial.print("====");
-  Serial.println();
+    String response = SerialAT.readString();
+    response.trim();
+    println(response);
 
-  delay(1000);
+    if (response.indexOf("COMMAND NOT FOUND") != -1)
+    {
+      response = sendAT(command);
+    }
+
+    unsigned long duration = millis() - startTime;
+    Serial.print("response time: ");
+    Serial.println(duration);
+    Serial.println("==== END OF COMMAND ====\n");
+
+    delay(2000);
+
+    return response;
+  }
+
+  Serial.println("[ ? ] ERROR: Unknown error on sendAT() function.");
+  unsigned long duration = millis() - startTime;
+  Serial.print("response time: ");
+  Serial.println(duration);
+  Serial.println("==== END OF COMMAND ====");
+  return "[ ? ] ERROR: command failed to response.";
 }
 
 String getValue(String data, char separator, int index) // the same as split function in python or nodejs #Currently not used
@@ -216,15 +241,12 @@ gpsReading getGPS()
   if (SerialAT.available())
   {
     String response = SerialAT.readString();
-    response.replace("\n", "");
-    response.replace("OK", "");
-    response.trim();
 
     if (response.indexOf("+LOCATION") == -1 && response.indexOf("ERROR") == -1 && response.indexOf("INVALID") == -1)
     {
-      // response.replace("\n", "");
-      // response.replace("OK", "");
-      // response.trim();
+      response.replace("\n", "");
+      response.replace("OK", "");
+      response.trim();
 
       Serial.println(response);
 
@@ -263,7 +285,8 @@ bool GPRScheckConnection()
 bool GPRSMQTTConnect()
 {
   println("[ GPRS ] Connecting to MQTT server...");
-  SerialAT.println("AT+MQTTCONN=\"35.209.3.73\",1883,\"ESP32-Client-test\",120,0,\"admin\",\"hivemq\"");
+  // SerialAT.println("AT+MQTTCONN=\"35.209.3.73\",1883,\"ESP32-Client-test\",120,0,\"admin\",\"hivemq\"");
+  SerialAT.println("AT+MQTTCONN=\"https://hivemq-bzfymzxv6a-uc.a.run.app\",1883,\"ESP32-Client-test\",120,0,\"admin\",\"hivemq\"");
   delay(500);
 
   bool state = false;

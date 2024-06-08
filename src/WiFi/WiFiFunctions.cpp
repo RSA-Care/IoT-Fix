@@ -57,7 +57,7 @@ bool checkWiFiConnection()
   }
   else
   {
-    WiFiReconnect();
+    // WiFiReconnect();
     return false;
   }
 }
