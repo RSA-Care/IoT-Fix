@@ -27,13 +27,35 @@ void A9GBegin()
   sendAT("ATI");
 
   // Checking SIM Card Status.
-  sendAT("AT+CPIN?");
+  String cpin = sendAT("AT+CPIN?");
+  if (cpin.indexOf("+CPIN:READY") >= 0)
+  {
+    println("SIM Card ready to use");
+  }
+  else
+  {
+    clearScreen();
+    println("No SIM Card detected.");
+    delay(10000);
+    return;
+  }
 
   // Set result error message.
   sendAT("AT+CMEE=2");
 
+  // Checking signal
+  String csq = sendAT("AT+CSQ");
+  if (csq.indexOf("+CSQ") >= 0)
+  {
+    int index = csq.indexOf(":");
+    int separator = csq.indexOf(",");
+    String rssi = csq.substring(index + 2, separator);
+    String ber = csq.substring(separator + 1, csq.indexOf("\n"));
+    Serial.println("Signal Strength: " + rssi);
+    Serial.println("Bit Error Rate: " + ber);
+  }
+
   // Checking Operator Selection.
-  // sendAT("AT+COPS?");
   String cops = sendAT("AT+COPS?");
   if (cops.indexOf("1") >= 0)
   {
@@ -43,12 +65,12 @@ void A9GBegin()
   {
     Serial.println("[ = ] INFO: SIM unregistered.");
     Serial.println("[ = ] INFO: Registering SIM..");
-    // String cops_reg = sendAT("AT+COPS=0");
+    String cops_reg = sendAT("AT+COPS=0");
   }
   else
   {
     Serial.println("[ = ] ERROR: SIM unregistered.");
-    Serial.println("[ = ] INFO: Registering SIM..");
+    Serial.println("[ = ] RESPONSE: " + cops);
     String cops_reg = sendAT("AT+COPS=0");
   }
 
@@ -68,49 +90,27 @@ void A9GBegin()
   sendAT("AT+CGDCONT=1, \"IP\", \"internet\"");
   sendAT("AT+CGDCONT?");
 
-  Serial.println("Activating and Checking GPRS PDP Context.");
-  clearScreen();
-  SerialAT.println("AT+CGACT=1,1");
-  println("AT+CGACT=1,1");
-  delay(1000);
-  if (SerialAT.available())
+  // Activating and Checking GPRS PDP Context.
+  String cgact = sendAT("AT+CGACT=1,1");
+  if (cgact.indexOf("ERROR") == -1)
   {
-    String response = SerialAT.readString();
-
-    if (response.indexOf("ERROR") == -1)
-    {
-      println("PDP Context registered.");
-      CGACT = true;
-    }
-    else
-    {
-      println("Failed to register PDP Context.");
-      Serial.println(response);
-
-      delay(5000);
-    }
+    println("GPRS Activated.");
+    CGACT = true;
+  }
+  else
+  {
+    println("An error has occured.");
   }
 
   // Checking Network Registration.
-  SerialAT.println("AT+CREG?");
-  delay(500);
-  while (!SerialAT.available())
+  String creg = sendAT("AT+CREG?");
+  if (creg.indexOf("1,1") != -1)
   {
-    if (SerialAT.available())
-    {
-      String response = SerialAT.readString();
-      Serial.println(response);
-      response.trim();
-      if (response.indexOf("+CREG: 1,1") != -1)
-      {
-        println("Network registered.");
-      }
-      else
-      {
-        println("Network not registered.");
-      }
-      delay(5000);
-    }
+    println("Network registered.");
+  }
+  else
+  {
+    println("Failed to register network.");
   }
 
   Serial.println("Checking chip status");
@@ -133,12 +133,14 @@ String sendAT(String command)
   println(command);
   SerialAT.println(command);
   delay(500);
-  Serial.println("Waiting response..");
+  Serial.print("Waiting response..");
   while (!SerialAT.available())
   {
-    Serial.println(".");
+    Serial.print(".");
     delay(500);
   }
+
+  Serial.println();
 
   if (SerialAT.available())
   {
@@ -146,7 +148,7 @@ String sendAT(String command)
     response.trim();
     println(response);
 
-    if (response.indexOf("COMMAND NOT FOUND") != -1)
+    if (response.indexOf("COMMAND NO RESPONSE!") != -1)
     {
       response = sendAT(command);
     }
@@ -163,8 +165,9 @@ String sendAT(String command)
 
   Serial.println("[ ? ] ERROR: Unknown error on sendAT() function.");
   unsigned long duration = millis() - startTime;
+  float total_time = (float)duration / 1000;
   Serial.print("response time: ");
-  Serial.println(duration);
+  Serial.println(total_time);
   Serial.println("==== END OF COMMAND ====");
   return "[ ? ] ERROR: command failed to response.";
 }
@@ -260,7 +263,7 @@ gpsReading getGPS()
       Serial.println("No GPS data recieved.");
       Serial.println("========================\n");
 
-      // Set the coordinate to 0,0 when error occured
+      // Reset the coordinate to 0,0 when error occured
       gps.latitude = "0.00";
       gps.longitude = "0.00";
     }
