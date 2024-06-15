@@ -10,10 +10,41 @@ bool CGACT = false;
 
 unsigned long startTime = 0;
 
+void reset_A9G()
+{
+  startTime = millis();
+  SerialAT.print("AT+RST=1\r");
+  bool ready = false;
+  while (!ready)
+  {
+    while (SerialAT.available())
+    {
+      String response = SerialAT.readString();
+      Serial.println(response);
+      if (response.indexOf("READY") != -1)
+      {
+        ready = true;
+      }
+    }
+    delay(500);
+  }
+  float duration = millis() - startTime;
+  Serial.print("Reset duration: ");
+  Serial.print(duration);
+  Serial.println(" ms");
+}
+
 void A9GBegin()
 {
   SerialAT.begin(115200);
-  delay(3000);
+  clearScreen();
+  println("GPS TRACKER");
+  println("FOR DOWN SYNDROME");
+  println("=================");
+  println("Starting A9G...");
+  // sendAT("AT+RST=1");
+  // delay(120000);
+  reset_A9G();
   clearScreen();
 
   Serial.println("A9G module started");
@@ -64,6 +95,11 @@ void A9GBegin()
   else if (cops.indexOf("+COPS: 1") >= 0)
   {
     println("Operator selection: Manual");
+    sendAT("AT+COPS=0");
+  }
+  else if (cops.indexOf("+COPS: 2"))
+  {
+    println("Operator selection: Deregistered");
     sendAT("AT+COPS=0");
   }
   else
@@ -118,46 +154,38 @@ String sendAT(String command)
   Serial.print(command);
   Serial.println(" ====");
 
-  println(command);
-  SerialAT.println(command);
-  delay(500);
-  Serial.print("Waiting response..");
-  while (!SerialAT.available())
+  SerialAT.print(command + "\r");
+
+  String response;
+  bool ok_status = false;
+
+  while (!ok_status)
   {
-    Serial.print(".");
+    while (SerialAT.available())
+    {
+      response = SerialAT.readString();
+      response.trim();
+      println(response);
+
+      if (response.indexOf("OK") >= 0 || response.indexOf("+CME ERROR") >= 0)
+      {
+        ok_status = true;
+      }
+      else if (response.indexOf("COMMAND NO RESPONSE!") >= 0)
+      {
+        response = sendAT(command);
+      }
+    }
     delay(500);
   }
 
-  Serial.println();
-
-  if (SerialAT.available())
-  {
-    String response = SerialAT.readString();
-    response.trim();
-    println(response);
-
-    if (response.indexOf("COMMAND NO RESPONSE!") != -1)
-    {
-      response = sendAT(command);
-    }
-
-    unsigned long duration = millis() - startTime;
-    Serial.print("response time: ");
-    Serial.println(duration);
-    Serial.println("==== END OF COMMAND ====\n");
-
-    delay(2000);
-
-    return response;
-  }
-
-  Serial.println("[ ? ] ERROR: Unknown error on sendAT() function.");
   unsigned long duration = millis() - startTime;
   float total_time = (float)duration / 1000;
   Serial.print("response time: ");
-  Serial.println(total_time);
+  Serial.print(total_time);
+  Serial.println(" S");
   Serial.println("==== END OF COMMAND ====");
-  return "[ ? ] ERROR: command failed to response.";
+  return response;
 }
 
 String getValue(String data, char separator, int index) // the same as split function in python or nodejs #Currently not used
@@ -182,8 +210,6 @@ String getValue(String data, char separator, int index) // the same as split fun
 bool GPSbegin()
 {
   SerialAT.begin(115200);
-  println("=== GPS ===");
-  sendAT("AT+CREG=1");
 
   bool state = false;
 
