@@ -25,9 +25,6 @@ bool GPRScheckConnection();
 gpsReading getGPS();
 
 // MQTT Functions
-bool GPRSMQTTConnect();
 void GPRSMQTTPublish(String payload);
-void GPRSMQTTReconnect();
-bool GPRSMQTTConnectionCheck();
 
 #endif // A9G_h

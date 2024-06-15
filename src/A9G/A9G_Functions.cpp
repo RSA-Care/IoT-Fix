@@ -57,64 +57,52 @@ void A9GBegin()
 
   // Checking Operator Selection.
   String cops = sendAT("AT+COPS?");
-  if (cops.indexOf("1") >= 0)
+  if (cops.indexOf("+COPS: 0") >= 0)
+  {
+    println("Operator selection: Automatic");
+  }
+  else if (cops.indexOf("+COPS: 1") >= 0)
+  {
+    println("Operator selection: Manual");
+    sendAT("AT+COPS=0");
+  }
+  else
+  {
+    println("Operator selection: Unknown");
+  }
+
+  // Checking for network connection.
+  String creg = sendAT("AT+CREG?");
+  if (creg.indexOf("+CREG: 1,1") >= 0)
   {
     Serial.println("[ = ] INFO: SIM registered.");
-  }
-  else if (cops.indexOf("0") >= 0)
-  {
-    Serial.println("[ = ] INFO: SIM unregistered.");
-    Serial.println("[ = ] INFO: Registering SIM..");
-    String cops_reg = sendAT("AT+COPS=0");
+    String cgatt = sendAT("AT+CGATT?");
+    // if (cgatt.indexOf("+CGATT: 1") >= 0)
+    // {
+    //   Serial.println("[ = ] INFO: GPRS attached.");
+    // }
+    // else
+    // {
+    //   cgatt = sendAT("AT+CGATT=1");
+    //   if (cgatt.indexOf("ERROR") >= 0)
+    //   {
+    //     Serial.println("[ = ] ERROR: GPRS attach failed.");
+    //   }
+    // }
+
+    String cgact = sendAT("AT+CGACT?"); // Check if PDP context is active
+    if (cgact.indexOf("+CGACT: 0,0") >= 0)
+    {
+      Serial.println("[ = ] INFO: PDP context is not active.");
+      String cgact_set = sendAT("AT+CGACT=1,1"); // Activate
+    }
+
+    return;
   }
   else
   {
     Serial.println("[ = ] ERROR: SIM unregistered.");
-    Serial.println("[ = ] RESPONSE: " + cops);
-    String cops_reg = sendAT("AT+COPS=0");
   }
-
-  // checking network attachment
-  String cgatt = sendAT("AT+CGATT=1");
-  if (cgatt.indexOf("ERROR") != -1)
-  {
-    println("Network failed to attach.");
-  }
-  else
-  {
-    println("Network attached.");
-    CGATT = true;
-  }
-
-  // Configuring GPRS.
-  sendAT("AT+CGDCONT=1, \"IP\", \"internet\"");
-  sendAT("AT+CGDCONT?");
-
-  // Activating and Checking GPRS PDP Context.
-  String cgact = sendAT("AT+CGACT=1,1");
-  if (cgact.indexOf("ERROR") == -1)
-  {
-    println("GPRS Activated.");
-    CGACT = true;
-  }
-  else
-  {
-    println("An error has occured.");
-  }
-
-  // Checking Network Registration.
-  String creg = sendAT("AT+CREG?");
-  if (creg.indexOf("1,1") != -1)
-  {
-    println("Network registered.");
-  }
-  else
-  {
-    println("Failed to register network.");
-  }
-
-  Serial.println("Checking chip status");
-  sendAT("AT+CIPSTATUS?");
 }
 
 void getInfo()
@@ -275,92 +263,26 @@ gpsReading getGPS()
 bool GPRScheckConnection()
 {
   Serial.println("Checking connection...");
-  if (CGACT && CGATT)
-  {
-    return true;
-  }
-  else
+  String ping = sendAT("AT+PING=1.1.1.1");
+
+  if (ping.indexOf("ERROR") >= 0)
   {
     return false;
   }
-}
 
-bool GPRSMQTTConnect()
-{
-  println("[ GPRS ] Connecting to MQTT server...");
-  // SerialAT.println("AT+MQTTCONN=\"35.209.3.73\",1883,\"ESP32-Client-test\",120,0,\"admin\",\"hivemq\"");
-  SerialAT.println("AT+MQTTCONN=\"https://hivemq-bzfymzxv6a-uc.a.run.app\",1883,\"ESP32-Client-test\",120,0,\"admin\",\"hivemq\"");
-  delay(500);
-
-  bool state = false;
-
-  if (SerialAT.available())
-  {
-    String response = SerialAT.readString();
-    println(response);
-
-    response.trim();
-
-    if (response == "OK")
-    {
-      state = true;
-    }
-
-    state = false;
-  }
-
-  return state;
+  String package_lose = ping.substring(ping.indexOf("<") + 1, ping.indexOf(">") - 1);
+  Serial.println("Package lose: " + package_lose);
+  return true;
 }
 
 void GPRSMQTTPublish(String payload)
 {
-  println("[ GPRS ] Publishing to MQTT server...");
-  SerialAT.println("AT+MQTTPUB=\"test\",0,\"" + payload + "\"");
-  delay(500);
-
-  if (SerialAT.available())
+  Serial.println("Connecting to MQTT Broker.");
+  String mqtt = sendAT("AT+MQTTCONN=\"34.30.152.206\",1883,\"ESP32-Client-test\",5,0,\"admin\",\"hivemq\"");
+  Serial.println("Publishing to MQTT server...");
+  String publish = sendAT("AT+MQTTPUB=\"test\"," + payload + ",0,0,1");
+  if (publish.indexOf("OK") >= 0)
   {
-    String response = SerialAT.readString();
-    println(response);
+    Serial.println("Published successfully");
   }
-}
-
-void GPRSMQTTReconnect()
-{
-  println("[ GPRS ] Reconnecting to MQTT server...");
-  SerialAT.println("AT+MQTTCONN=\"35.209.3.73\",1883,\"ESP32-Client-test\",120,0,\"admin\",\"hivemq\"");
-  if (SerialAT.available())
-  {
-    String response = SerialAT.readString();
-    println(response);
-
-    response.trim();
-
-    // Check for connected response if connected then return to main loop, loop for 30 times
-  }
-}
-
-bool GPRSMQTTConnectionCheck()
-{
-  /*
-  0: Connection to the MQTT broker is successful.
-  2: Connection failed due to invalid parameters.
-  3: Connection failed due to network error.
-  4: Connection failed due to authentication error (if username/password was used).
-  5: Connection is already active (if you try to connect when already connected).
-  */
-
-  println("[ GPRS ] Checking MQTT connection...");
-  SerialAT.println("AT+MQTTCONNSTAT?");
-  delay(500);
-  if (SerialAT.available())
-  {
-    String response = SerialAT.readString();
-    response.trim();
-    println(response);
-
-    // check for response and if necessary loop to reconnect
-  }
-
-  return false;
 }

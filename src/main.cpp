@@ -40,11 +40,7 @@ void setup()
     clearScreen();
     println("WiFi not connected.\nStarting GSM.");
     delay(1000);
-    if (GPRScheckConnection())
-    {
-      println("Starting MQTT.");
-      GPRSMQTTConnect();
-    }
+    GPRScheckConnection();
   }
 
   GPSbegin(); // Starting GPS
@@ -75,20 +71,13 @@ void loop()
   }
   else if (GPRScheckConnection()) // if not connected to WiFi use GPRS
   {
-    if (GPRSMQTTConnectionCheck()) // check mqtt connection
-    {
-      String payload = gps.longitude + "," + gps.latitude + "," + String(dht.temperatureC) + "," + String(dht.humidity);
-      GPRSMQTTPublish(payload);
-    }
-    else
-    {
-      GPRSMQTTReconnect();
-    }
+    String payload = gps.longitude + "," + gps.latitude + "," + String(dht.temperatureC) + "," + String(dht.humidity);
+    GPRSMQTTPublish(payload);
   }
-  else
-  {
-    WiFiReconnect();
-  }
+  // else
+  // {
+  //   WiFiReconnect();
+  // }
 
   delay(3000);
 
