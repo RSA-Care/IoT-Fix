@@ -11,8 +11,8 @@ const char gprsPass[] = "123wap";
 
 typedef struct
 {
-  String latitude;
-  String longitude;
+  String latitude = "0.00";
+  String longitude = "0.00";
 } gpsReading;
 
 // Function prototypes

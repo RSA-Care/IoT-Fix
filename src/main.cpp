@@ -69,7 +69,7 @@ void loop()
       MQTTReconnect();
     }
   }
-  else if (GPRScheckConnection()) // if not connected to WiFi use GPRS
+  else
   {
     String payload = gps.longitude + "," + gps.latitude + "," + String(dht.temperatureC) + "," + String(dht.humidity);
     GPRSMQTTPublish(payload);

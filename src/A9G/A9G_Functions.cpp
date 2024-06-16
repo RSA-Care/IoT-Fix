@@ -44,7 +44,30 @@ void A9GBegin()
   println("Starting A9G...");
   // sendAT("AT+RST=1");
   // delay(120000);
-  reset_A9G();
+  bool ready = false;
+  unsigned long boot_start = millis();
+  while (!ready && (millis() - boot_start) < 120000)
+  {
+    while (SerialAT.available())
+    {
+      String response = SerialAT.readString();
+      Serial.println(response);
+      if (response.indexOf("READY") != -1)
+      {
+        ready = true;
+      }
+    }
+    delay(500);
+  }
+
+  if (!ready)
+  {
+    reset_A9G();
+  }
+  float start_duration = millis() - boot_start;
+  Serial.print("Boot time: ");
+  Serial.print(start_duration / 1000);
+  Serial.println(" s");
   clearScreen();
 
   Serial.println("A9G module started");
@@ -163,13 +186,13 @@ String sendAT(String command)
   {
     while (SerialAT.available())
     {
-      response = SerialAT.readString();
-      response.trim();
+      response = response + SerialAT.readString();
       println(response);
 
       if (response.indexOf("OK") >= 0 || response.indexOf("+CME ERROR") >= 0)
       {
         ok_status = true;
+        break;
       }
       else if (response.indexOf("COMMAND NO RESPONSE!") >= 0)
       {
@@ -188,51 +211,18 @@ String sendAT(String command)
   return response;
 }
 
-String getValue(String data, char separator, int index) // the same as split function in python or nodejs #Currently not used
-{
-  int found = 0;
-  int strIndex[] = {0, -1};
-  int maxIndex = data.length() - 1;
-
-  for (int i = 0; i <= maxIndex && found <= index; i++)
-  {
-    if (data.charAt(i) == separator || i == maxIndex)
-    {
-      found++;
-      strIndex[0] = strIndex[1] + 1;
-      strIndex[1] = (i == maxIndex) ? i + 1 : i;
-    }
-  }
-
-  return found > index ? data.substring(strIndex[0], strIndex[1]) : "";
-}
-
 bool GPSbegin()
 {
   SerialAT.begin(115200);
 
   bool state = false;
 
-  sendAT("AT+GPS=1");
+  String gps_begin = sendAT("AT+GPS=1");
 
-  SerialAT.println("AT+GPS?");
-  delay(500);
-  if (SerialAT.available())
+  Serial.println(gps_begin);
+  if (gps_begin.indexOf("OK") >= 0)
   {
-    String response = SerialAT.readString();
-    response.trim();
-    Serial.println(response);
-
-    if (response.indexOf("+GPS: 1") != -1)
-    {
-      state = true;
-      println("GPS started.");
-    }
-    else
-    {
-      state = false;
-      println("GPS not started.");
-    }
+    state = true;
   }
   return state;
 }
@@ -250,38 +240,60 @@ gpsReading getGPS()
   */
 
   Serial.println("Checking GPS data.");
-  SerialAT.println("AT+LOCATION=2");
+  SerialAT.print("AT+LOCATION=2\r");
   delay(500);
+
+  bool ok_status = false;
+  bool error_status = false;
   gpsReading gps;
 
-  delay(500);
-  if (SerialAT.available())
+  while (!ok_status && !error_status)
   {
-    String response = SerialAT.readString();
-
-    if (response.indexOf("+LOCATION") == -1 && response.indexOf("ERROR") == -1 && response.indexOf("INVALID") == -1)
+    while (SerialAT.available())
     {
-      response.replace("\n", "");
-      response.replace("OK", "");
-      response.trim();
-
+      String response = SerialAT.readString();
       Serial.println(response);
-
-      gps.latitude = response.substring(0, response.indexOf(","));
-      gps.longitude = response.substring(response.indexOf(",") + 1);
-    }
-    else
-    {
-      Serial.println("\n=== UNEXPECTED ERROR ===");
-      Serial.println(response);
-      Serial.println("No GPS data recieved.");
-      Serial.println("========================\n");
-
-      // Reset the coordinate to 0,0 when error occured
-      gps.latitude = "0.00";
-      gps.longitude = "0.00";
+      if (response.indexOf("+LOCATION: GPS NOT FIX NOW") >= 0 || response.indexOf("+CME ERROR:") >= 0)
+      {
+        error_status = true;
+      }
+      else
+      {
+        gps.latitude = response.substring(0, response.indexOf(","));
+        gps.longitude = response.substring(response.indexOf(",") + 1, response.indexOf("\n"));
+        ok_status = true;
+      }
     }
   }
+
+  // delay(500);
+  // if (SerialAT.available())
+  // {
+  //   String response = SerialAT.readString();
+
+  //   if (response.indexOf("+LOCATION") == -1 && response.indexOf("ERROR") == -1 && response.indexOf("INVALID") == -1)
+  //   {
+  //     response.replace("\n", "");
+  //     response.replace("OK", "");
+  //     response.trim();
+
+  //     Serial.println(response);
+
+  //     gps.latitude = response.substring(0, response.indexOf(","));
+  //     gps.longitude = response.substring(response.indexOf(",") + 1);
+  //   }
+  //   else
+  //   {
+  //     Serial.println("\n=== UNEXPECTED ERROR ===");
+  //     Serial.println(response);
+  //     Serial.println("No GPS data recieved.");
+  //     Serial.println("========================\n");
+
+  //     // Reset the coordinate to 0,0 when error occured
+  //     gps.latitude = "0.00";
+  //     gps.longitude = "0.00";
+  //   }
+  // }
 
   return gps;
 }
@@ -289,26 +301,98 @@ gpsReading getGPS()
 bool GPRScheckConnection()
 {
   Serial.println("Checking connection...");
-  String ping = sendAT("AT+PING=1.1.1.1");
+  SerialAT.print("AT+PING=1.1.1.1\r");
 
-  if (ping.indexOf("ERROR") >= 0)
+  bool packets = false;
+  bool error = false;
+  int lose;
+
+  while (!packets && !error)
   {
-    return false;
+    while (SerialAT.available())
+    {
+      String response = SerialAT.readString();
+      Serial.println(response);
+      if (response.indexOf("Packets: ") >= 0)
+      {
+        packets = true;
+        lose = response.substring(response.indexOf("<") + 1, response.indexOf("%")).toInt();
+      }
+      if (response.indexOf("+CME ERROR:") >= 0)
+      {
+        lose = 100;
+        error = true;
+      }
+    }
+    delay(500);
   }
 
-  String package_lose = ping.substring(ping.indexOf("<") + 1, ping.indexOf(">") - 1);
-  Serial.println("Package lose: " + package_lose);
-  return true;
+  Serial.println("Package lose: " + String(lose) + "%");
+  return packets;
+}
+
+bool MQTT_Connection()
+{
+  bool error_status = false;
+  bool ok_status = false;
+
+  SerialAT.print("AT+MQTTCONN=\"34.30.152.206\",1883,\"ESP32-Client-test\",15000,0,\"admin\",\"hivemq\"\r");
+
+  while (!ok_status && !error_status)
+  {
+    while (SerialAT.available())
+    {
+      String response = SerialAT.readString();
+      Serial.println(response);
+      if (response.indexOf("OK") >= 0)
+      {
+        ok_status = true;
+      }
+      else if (response.indexOf("+CME ERROR:") >= 0 || response.indexOf("COMMAND NO RESPONSE!") >= 0)
+      {
+        error_status = true;
+      }
+    }
+  }
+
+  return ok_status;
 }
 
 void GPRSMQTTPublish(String payload)
 {
   Serial.println("Connecting to MQTT Broker.");
-  String mqtt = sendAT("AT+MQTTCONN=\"34.30.152.206\",1883,\"ESP32-Client-test\",5,0,\"admin\",\"hivemq\"");
-  Serial.println("Publishing to MQTT server...");
-  String publish = sendAT("AT+MQTTPUB=\"test\"," + payload + ",0,0,1");
-  if (publish.indexOf("OK") >= 0)
+
+  bool error_status = false;
+  bool ok_status = false;
+
+  SerialAT.print("AT+MQTTPUB=\"test\",\"" + payload + "\",0,0,1\r");
+  ok_status = false;
+  while (!ok_status && !error_status)
   {
-    Serial.println("Published successfully");
+    while (SerialAT.available())
+    {
+      String response = SerialAT.readString();
+      Serial.println(response);
+      if (response.indexOf("OK") >= 0)
+      {
+        Serial.println("Published successfully");
+        ok_status = true;
+      }
+      else if (response.indexOf("+CME ERROR:") >= 0)
+      {
+        error_status = true;
+      }
+    }
+    delay(500);
+  }
+
+  if (error_status)
+  {
+    bool connection = MQTT_Connection();
+
+    if (connection)
+    {
+      GPRSMQTTPublish(payload);
+    }
   }
 }
