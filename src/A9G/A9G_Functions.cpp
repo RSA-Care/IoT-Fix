@@ -37,6 +37,22 @@ void reset_A9G()
 void A9GBegin()
 {
   SerialAT.begin(115200);
+  delay(500);
+
+  // Checking SIM Card Status.
+  String cpin = sendAT("AT+CPIN?");
+  if (cpin.indexOf("+CPIN:READY") >= 0)
+  {
+    println("SIM Card ready to use");
+  }
+  else
+  {
+    clearScreen();
+    println("No SIM Card detected.");
+    delay(10000);
+    return;
+  }
+
   clearScreen();
   println("GPS TRACKER");
   println("FOR DOWN SYNDROME");
@@ -79,20 +95,6 @@ void A9GBegin()
   // delay(1000);
 
   sendAT("ATI");
-
-  // Checking SIM Card Status.
-  String cpin = sendAT("AT+CPIN?");
-  if (cpin.indexOf("+CPIN:READY") >= 0)
-  {
-    println("SIM Card ready to use");
-  }
-  else
-  {
-    clearScreen();
-    println("No SIM Card detected.");
-    delay(10000);
-    return;
-  }
 
   // Set result error message.
   sendAT("AT+CMEE=2");
