@@ -224,7 +224,6 @@ String splitString(String input, char delimiter, int index = 0)
 {
   input.trim();
   String result;
-  String res[input.length()];
   int prev_delimiter_index = 0;
   int temp_index = 0;
 
@@ -234,9 +233,15 @@ String splitString(String input, char delimiter, int index = 0)
     {
       if (temp_index == index)
       {
-        result = input.substring(prev_delimiter_index, i);
+        if (prev_delimiter_index == 0)
+        {
+          result = input.substring(prev_delimiter_index, i);
+        }
+        else
+        {
+          result = input.substring(prev_delimiter_index + 1, i);
+        }
       }
-      // res[temp_index] = input.substring(prev_delimiter_index + 1, i);
       temp_index++;
       prev_delimiter_index = i;
     }
@@ -265,7 +270,7 @@ gpsReading getGPS()
   */
 
   String gps_data = sendAT("AT+LOCATION=2");
-  if (gps_data.indexOf("ERROR") != -1)
+  if (gps_data.indexOf("GPS NOT FIX NOW") != -1)
   {
     return gps;
   }
