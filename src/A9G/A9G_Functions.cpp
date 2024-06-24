@@ -265,37 +265,16 @@ gpsReading getGPS()
   */
 
   String gps_data = sendAT("AT+LOCATION=2");
+  if (gps_data.indexOf("ERROR") != -1)
+  {
+    return gps;
+  }
+
   String lat = splitString(gps_data, ',', 0);
   String lon = splitString(gps_data, ',', 1);
 
   gps.latitude = lat;
   gps.longitude = lon;
-
-  // Serial.println("Checking GPS data.");
-  // SerialAT.print("AT+LOCATION=2\r");
-  // delay(500);
-
-  // bool ok_status = false;
-  // bool error_status = false;
-
-  // while (!ok_status && !error_status)
-  // {
-  //   while (SerialAT.available())
-  //   {
-  //     String response = SerialAT.readString();
-  //     Serial.println(response);
-  //     if (response.indexOf("+LOCATION: GPS NOT FIX NOW") >= 0 || response.indexOf("+CME ERROR:") >= 0)
-  //     {
-  //       error_status = true;
-  //     }
-  //     else
-  //     {
-  //       gps.latitude = response.substring(0, response.indexOf(","));
-  //       gps.longitude = response.substring(response.indexOf(",") + 1, response.indexOf("\n"));
-  //       ok_status = true;
-  //     }
-  //   }
-  // }
 
   return gps;
 }
