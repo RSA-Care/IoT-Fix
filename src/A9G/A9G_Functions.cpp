@@ -173,43 +173,34 @@ void getInfo()
 
 String sendAT(String command)
 {
-  startTime = millis();
-  clearScreen();
-  Serial.print("\n==== ");
-  Serial.print(command);
-  Serial.println(" ====");
-
   SerialAT.print(command + "\r");
 
-  String response;
+  String response = "";
   bool ok_status = false;
-
-  while (!ok_status)
+  bool error_status = false;
+  while (!ok_status && !error_status)
   {
     while (SerialAT.available())
     {
-      response = response + SerialAT.readString();
-      println(response);
-
-      if (response.indexOf("OK") >= 0 || response.indexOf("+CME ERROR") >= 0)
+      String temp = SerialAT.readStringUntil('\n');
+      temp.trim();
+      Serial.println(temp);
+      if (temp.indexOf("OK") != -1)
       {
         ok_status = true;
-        break;
       }
-      else if (response.indexOf("COMMAND NO RESPONSE!") >= 0)
+      else if (temp.indexOf("ERROR") != -1)
       {
-        response = sendAT(command);
+        error_status = true;
+      }
+      else
+      {
+        response += temp;
       }
     }
     delay(500);
   }
 
-  unsigned long duration = millis() - startTime;
-  float total_time = (float)duration / 1000;
-  Serial.print("response time: ");
-  Serial.print(total_time);
-  Serial.println(" S");
-  Serial.println("==== END OF COMMAND ====");
   return response;
 }
 
@@ -229,8 +220,40 @@ bool GPSbegin()
   return state;
 }
 
+String splitString(String input, char delimiter, int index = 0)
+{
+  input.trim();
+  String result;
+  String res[input.length()];
+  int prev_delimiter_index = 0;
+  int temp_index = 0;
+
+  for (int i = 0; i < input.length(); i++)
+  {
+    if (input[i] == delimiter)
+    {
+      if (temp_index == index)
+      {
+        result = input.substring(prev_delimiter_index, i);
+      }
+      // res[temp_index] = input.substring(prev_delimiter_index + 1, i);
+      temp_index++;
+      prev_delimiter_index = i;
+    }
+  }
+
+  if (result.isEmpty())
+  {
+    result = input.substring(prev_delimiter_index + 1, input.length());
+  }
+
+  return result;
+}
+
 gpsReading getGPS()
 {
+  gpsReading gps;
+
   /*
   Use this to get the latitude and longitude coordinate
   AT+LOCATION=2
@@ -241,59 +264,36 @@ gpsReading getGPS()
   OK
   */
 
-  Serial.println("Checking GPS data.");
-  SerialAT.print("AT+LOCATION=2\r");
-  delay(500);
+  String gps_data = sendAT("AT+LOCATION=2");
+  String lat = splitString(gps_data, ',', 0);
+  String lon = splitString(gps_data, ',', 1);
 
-  bool ok_status = false;
-  bool error_status = false;
-  gpsReading gps;
+  gps.latitude = lat;
+  gps.longitude = lon;
 
-  while (!ok_status && !error_status)
-  {
-    while (SerialAT.available())
-    {
-      String response = SerialAT.readString();
-      Serial.println(response);
-      if (response.indexOf("+LOCATION: GPS NOT FIX NOW") >= 0 || response.indexOf("+CME ERROR:") >= 0)
-      {
-        error_status = true;
-      }
-      else
-      {
-        gps.latitude = response.substring(0, response.indexOf(","));
-        gps.longitude = response.substring(response.indexOf(",") + 1, response.indexOf("\n"));
-        ok_status = true;
-      }
-    }
-  }
-
+  // Serial.println("Checking GPS data.");
+  // SerialAT.print("AT+LOCATION=2\r");
   // delay(500);
-  // if (SerialAT.available())
+
+  // bool ok_status = false;
+  // bool error_status = false;
+
+  // while (!ok_status && !error_status)
   // {
-  //   String response = SerialAT.readString();
-
-  //   if (response.indexOf("+LOCATION") == -1 && response.indexOf("ERROR") == -1 && response.indexOf("INVALID") == -1)
+  //   while (SerialAT.available())
   //   {
-  //     response.replace("\n", "");
-  //     response.replace("OK", "");
-  //     response.trim();
-
+  //     String response = SerialAT.readString();
   //     Serial.println(response);
-
-  //     gps.latitude = response.substring(0, response.indexOf(","));
-  //     gps.longitude = response.substring(response.indexOf(",") + 1);
-  //   }
-  //   else
-  //   {
-  //     Serial.println("\n=== UNEXPECTED ERROR ===");
-  //     Serial.println(response);
-  //     Serial.println("No GPS data recieved.");
-  //     Serial.println("========================\n");
-
-  //     // Reset the coordinate to 0,0 when error occured
-  //     gps.latitude = "0.00";
-  //     gps.longitude = "0.00";
+  //     if (response.indexOf("+LOCATION: GPS NOT FIX NOW") >= 0 || response.indexOf("+CME ERROR:") >= 0)
+  //     {
+  //       error_status = true;
+  //     }
+  //     else
+  //     {
+  //       gps.latitude = response.substring(0, response.indexOf(","));
+  //       gps.longitude = response.substring(response.indexOf(",") + 1, response.indexOf("\n"));
+  //       ok_status = true;
+  //     }
   //   }
   // }
 
