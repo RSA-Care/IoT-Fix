@@ -5,8 +5,9 @@
 TinyGPSPlus _gps;
 HardwareSerial SerialAT(2);
 
-bool CGATT = false;
-bool CGACT = false;
+bool sim = false;
+bool internet = false;
+bool GPSstate = false;
 
 unsigned long startTime = 0;
 
@@ -43,6 +44,7 @@ void A9GBegin()
   String cpin = sendAT("AT+CPIN?");
   if (cpin.indexOf("+CPIN:READY") >= 0)
   {
+    sim = true;
     println("SIM Card ready to use");
   }
   else
@@ -138,19 +140,6 @@ void A9GBegin()
   {
     Serial.println("[ = ] INFO: SIM registered.");
     String cgatt = sendAT("AT+CGATT?");
-    // if (cgatt.indexOf("+CGATT: 1") >= 0)
-    // {
-    //   Serial.println("[ = ] INFO: GPRS attached.");
-    // }
-    // else
-    // {
-    //   cgatt = sendAT("AT+CGATT=1");
-    //   if (cgatt.indexOf("ERROR") >= 0)
-    //   {
-    //     Serial.println("[ = ] ERROR: GPRS attach failed.");
-    //   }
-    // }
-
     String cgact = sendAT("AT+CGACT?"); // Check if PDP context is active
     if (cgact.indexOf("+CGACT: 0,0") >= 0)
     {
@@ -208,16 +197,23 @@ bool GPSbegin()
 {
   SerialAT.begin(115200);
 
-  bool state = false;
+  String checkGPS = sendAT("AT+GPS?");
+
+  if (checkGPS.indexOf("+GPS: 1") != -1)
+  {
+    GPSstate = true;
+    return GPSstate;
+  }
 
   String gps_begin = sendAT("AT+GPS=1");
 
   Serial.println(gps_begin);
+
   if (gps_begin.indexOf("OK") >= 0)
   {
-    state = true;
+    GPSstate = true;
   }
-  return state;
+  return GPSstate;
 }
 
 String splitString(String input, char delimiter, int index = 0)
@@ -270,13 +266,16 @@ gpsReading getGPS()
   */
 
   String gps_data = sendAT("AT+LOCATION=2");
+
   if (gps_data.indexOf("GPS NOT FIX NOW") != -1)
   {
     return gps;
   }
 
-  String lat = splitString(gps_data, ',', 0);
-  String lon = splitString(gps_data, ',', 1);
+  String data = splitString(gps_data, '\n', 1);
+
+  String lat = splitString(data, ',', 0);
+  String lon = splitString(data, ',', 1);
 
   gps.latitude = lat;
   gps.longitude = lon;
@@ -346,6 +345,10 @@ bool MQTT_Connection()
 
 void GPRSMQTTPublish(String payload)
 {
+  if (!sim)
+  {
+    return;
+  }
   Serial.println("Connecting to MQTT Broker.");
 
   bool error_status = false;
