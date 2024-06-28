@@ -283,7 +283,7 @@ gpsReading getGPS()
 
   String gps_data = sendAT("AT+LOCATION=2");
 
-  if (gps_data.indexOf("GPS NOT FIX NOW") != -1)
+  if (gps_data.indexOf("GPS NOT FIX NOW") != -1 || gps_data.indexOf("ERROR") != -1)
   {
     return gps;
   }
