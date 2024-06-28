@@ -92,6 +92,9 @@ void A9GBegin()
   delay(3000);
   clearScreen();
 
+  sendAT();
+  delay(1000);
+
   // Checking SIM Card Status.
   String cpin = sendAT("AT+CPIN?");
   if (cpin.indexOf("+CPIN:READY") != -1)
@@ -106,9 +109,6 @@ void A9GBegin()
     delay(10000);
     return;
   }
-
-  sendAT();
-  delay(1000);
 
   sendAT("ATI");
 
