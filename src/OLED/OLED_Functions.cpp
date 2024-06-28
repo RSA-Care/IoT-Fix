@@ -16,7 +16,6 @@ void oledBegin()
   }
 
   display.display();
-  delay(1000);
 
   display.clearDisplay();
   display.setTextColor(WHITE);
@@ -26,7 +25,6 @@ void oledBegin()
   display.println("FOR DOWN SYNDROME");
   display.println("=================");
   display.display();
-  delay(2000);
   return;
 }
 
