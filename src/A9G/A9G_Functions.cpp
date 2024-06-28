@@ -202,6 +202,8 @@ String sendAT(String command)
       {
         response += temp;
       }
+
+      response += "\n";
     }
     delay(500);
   }

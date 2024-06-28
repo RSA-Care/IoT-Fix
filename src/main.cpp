@@ -20,8 +20,8 @@ void setup()
 
   oledBegin();
   dhtBegin();
-  WiFibegin(SSID, PASS);
   A9GBegin();
+  WiFibegin(SSID, PASS);
 
   /*
   Check if wifi is connected, if not then use gsm
