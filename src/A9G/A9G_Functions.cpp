@@ -89,6 +89,7 @@ void A9GBegin()
   Serial.print("Boot time: ");
   Serial.print(start_duration / 1000);
   Serial.println(" s");
+  delay(3000);
   clearScreen();
 
   // Checking SIM Card Status.
@@ -189,10 +190,12 @@ String sendAT(String command)
       Serial.println(temp);
       if (temp.indexOf("OK") != -1)
       {
+        response += temp;
         ok_status = true;
       }
       else if (temp.indexOf("ERROR") != -1)
       {
+        response += temp;
         error_status = true;
       }
       else if (temp.indexOf(command) == -1)
