@@ -94,7 +94,7 @@ void A9GBegin()
 
   // Checking SIM Card Status.
   String cpin = sendAT("AT+CPIN?");
-  if (cpin.indexOf("+CPIN:READY") >= 0)
+  if (cpin.indexOf("+CPIN:READY") != -1)
   {
     sim = true;
     println("SIM Card ready to use");
