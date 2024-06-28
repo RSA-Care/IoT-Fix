@@ -11,12 +11,12 @@ bool GPSstate = false;
 
 unsigned long startTime = 0;
 
-void reset_A9G()
+bool reset_A9G()
 {
   startTime = millis();
   SerialAT.print("AT+RST=1\r");
   bool ready = false;
-  while (!ready)
+  while (!ready && (millis() - startTime <= 120000))
   {
     while (SerialAT.available())
     {
@@ -29,10 +29,19 @@ void reset_A9G()
     }
     delay(500);
   }
+  delay(500);
   float duration = millis() - startTime;
+
+  if (duration > 120000)
+  {
+    Serial.println("A9G reset failed");
+  }
+
   Serial.print("Reset duration: ");
   Serial.print(duration);
   Serial.println(" ms");
+
+  return ready;
 }
 
 void A9GBegin()
@@ -40,28 +49,12 @@ void A9GBegin()
   SerialAT.begin(115200);
   delay(500);
 
-  // Checking SIM Card Status.
-  String cpin = sendAT("AT+CPIN?");
-  if (cpin.indexOf("+CPIN:READY") >= 0)
-  {
-    sim = true;
-    println("SIM Card ready to use");
-  }
-  else
-  {
-    clearScreen();
-    println("No SIM Card detected.");
-    delay(10000);
-    return;
-  }
-
   clearScreen();
   println("GPS TRACKER");
   println("FOR DOWN SYNDROME");
   println("=================");
   println("Starting A9G...");
-  // sendAT("AT+RST=1");
-  // delay(120000);
+
   bool ready = false;
   unsigned long boot_start = millis();
   while (!ready && (millis() - boot_start) < 120000)
@@ -80,7 +73,17 @@ void A9GBegin()
 
   if (!ready)
   {
-    reset_A9G();
+    println("Response not detected.");
+    println("Resetting A9G...");
+    // bool reset = reset_A9G();
+    if (reset_A9G())
+    {
+      println("Reset successful");
+    }
+    else
+    {
+      println("Reset failed");
+    }
   }
   float start_duration = millis() - boot_start;
   Serial.print("Boot time: ");
@@ -88,13 +91,23 @@ void A9GBegin()
   Serial.println(" s");
   clearScreen();
 
-  Serial.println("A9G module started");
+  // Checking SIM Card Status.
+  String cpin = sendAT("AT+CPIN?");
+  if (cpin.indexOf("+CPIN:READY") >= 0)
+  {
+    sim = true;
+    println("SIM Card ready to use");
+  }
+  else
+  {
+    clearScreen();
+    println("[ ! ] No SIM Card detected.");
+    delay(10000);
+    return;
+  }
 
   sendAT();
   delay(1000);
-
-  // sendAT("AT+RST=1");
-  // delay(1000);
 
   sendAT("ATI");
 
@@ -182,7 +195,7 @@ String sendAT(String command)
       {
         error_status = true;
       }
-      else
+      else if (temp.indexOf(command) == -1)
       {
         response += temp;
       }
@@ -272,10 +285,8 @@ gpsReading getGPS()
     return gps;
   }
 
-  String data = splitString(gps_data, '\n', 1);
-
-  String lat = splitString(data, ',', 0);
-  String lon = splitString(data, ',', 1);
+  String lat = splitString(gps_data, ',', 0);
+  String lon = splitString(gps_data, ',', 1);
 
   gps.latitude = lat;
   gps.longitude = lon;
@@ -354,7 +365,9 @@ void GPRSMQTTPublish(String payload)
   bool error_status = false;
   bool ok_status = false;
 
-  SerialAT.print("AT+MQTTPUB=\"test\",\"" + payload + "\",0,0,1\r");
+  String topic = "test"; // change this for each device or create a one time randomizer
+
+  SerialAT.print("AT+MQTTPUB=\"" + topic + "\",\"" + payload + "\",0,0,1\r");
   ok_status = false;
   while (!ok_status && !error_status)
   {
