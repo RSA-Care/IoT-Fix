@@ -288,6 +288,8 @@ gpsReading getGPS()
     return gps;
   }
 
+  gps_data.replace("OK", "");
+
   String lat = splitString(gps_data, ',', 0);
   String lon = splitString(gps_data, ',', 1);
 
