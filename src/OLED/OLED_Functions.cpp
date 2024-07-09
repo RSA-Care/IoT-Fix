@@ -16,15 +16,17 @@ void oledBegin()
   }
 
   display.display();
+  delay(1000);
 
   display.clearDisplay();
   display.setTextColor(WHITE);
   display.setTextSize(1);
   display.setCursor(0, 0);
-  display.println("GPS TRACKER");
-  display.println("FOR DOWN SYNDROME");
-  display.println("=================");
+  println("GPS TRACKER");
+  println("FOR DOWN SYNDROME");
+  println("=================");
   display.display();
+  delay(2000);
   return;
 }
 
@@ -38,13 +40,47 @@ void clearScreen()
 void print(String message)
 {
   Serial.print(message);
-  display.print(message);
+  if (display.getCursorX() + message.length() > display.width())
+  {
+    display.println(message);
+  }
+  else
+  {
+    display.print(message);
+  }
   display.display();
 }
 
 void println(String message)
 {
   Serial.println(message);
-  display.println(message);
+
+  if (display.getCursorY() == display.height())
+  {
+    clearScreen();
+    display.println(message);
+  }
+  else
+  {
+    display.println(message);
+  }
+
+  display.display();
+}
+
+void header(String signal, String topic)
+{
+  clearScreen();
+  String text = "DST Tracker";
+  int width = display.width();
+  int height = display.height();
+  int box_height = 13;
+  display.drawRect(0, 0, width, box_height, SSD1306_WHITE);
+  display.setCursor(2, 3);
+  display.print(text);
+  display.setCursor(display.width() - 1 - (topic.length() * 6), 3);
+  display.println(topic);
+
+  display.setCursor(display.getCursorX(), display.getCursorY() + 5);
   display.display();
 }
