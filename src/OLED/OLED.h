@@ -12,5 +12,6 @@ void oledBegin();
 void print(String message);
 void println(String message);
 void clearScreen();
+void header(String signal, String topic);
 
 #endif // OLED_h

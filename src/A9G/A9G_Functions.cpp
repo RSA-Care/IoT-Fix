@@ -412,15 +412,15 @@ void GPRSMQTTPublish(String payload)
   }
 }
 
-void oledHeader()
+A9G_Data deviceInfo()
 {
-  String topic = getData("topic.txt");
-  String signal_data = sendAT("AT+CSQ");
-  String raw_data = splitString(signal_data, ':', 1);
-  raw_data.replace(" ", "");
-  int signal_strength = splitString(raw_data, ',').toInt();
-  float percent_signal_strength = (signal_strength / 31) * 100;
+  A9G_Data device;
 
-  clearScreen();
-  println("Topic : " + topic + "\n");
+  String raw_data = sendAT("AT+CSQ");
+  raw_data.replace("+CSQ: ", "");
+
+  device.signalStrength = splitString(raw_data, ',').toInt();
+  device.errorRate = splitString(raw_data, ',').toInt();
+
+  return device;
 }

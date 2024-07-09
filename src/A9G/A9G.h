@@ -16,6 +16,12 @@ typedef struct
   String longitude = "0.00";
 } gpsReading;
 
+typedef struct
+{
+  int signalStrength = 0;
+  int errorRate = 0;
+} A9G_Data;
+
 // Function prototypes
 void A9GBegin();
 String sendAT(String command = "AT");
@@ -23,6 +29,7 @@ void getInfo();
 void A9GReconnect();
 bool GPSbegin();
 bool GPRScheckConnection();
+A9G_Data deviceInfo();
 gpsReading getGPS();
 
 // MQTT Functions

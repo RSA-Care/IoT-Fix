@@ -2,7 +2,6 @@
 #define DataHandler
 
 #include <Arduino.h>
-#include <ArduinoJson.h>
 #include <SPIFFS.h>
 #include <cstdlib>
 #include "OLED/OLED.h"

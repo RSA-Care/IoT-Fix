@@ -54,11 +54,12 @@ void setup()
 
 void loop()
 {
-  gpsReading gps = getGPS();  // getting gps data
-  DhtReading dht = dhtRead(); // getting dht data
+  A9G_Data gprs = deviceInfo(); // A9G Device info
+  gpsReading gps = getGPS();    // getting gps data
+  DhtReading dht = dhtRead();   // getting dht data
 
   // clearScreen();
-  oledHeader();
+  header(String(gprs.signalStrength), getData("topic.txt"));
   println("Latitude: " + gps.latitude);
   println("Longitude: " + gps.longitude);
   println("Temperature: " + String(dht.temperatureC));
@@ -66,7 +67,7 @@ void loop()
 
   String payload = gps.longitude + "," + gps.latitude + "," + String(dht.temperatureC) + "," + String(dht.humidity);
 
-  if (checkWiFiConnection()) // check if WiFi is connected
+  if (WiFi.isConnected()) // check if WiFi is connected
   {
     if (MQTTConnection()) // checking mqtt connection
     {
