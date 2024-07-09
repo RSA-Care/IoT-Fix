@@ -372,7 +372,13 @@ void GPRSMQTTPublish(String payload)
   bool error_status = false;
   bool ok_status = false;
 
-  String topic = "test"; // change this for each device or create a one time randomizer
+  // String topic = "test";
+  String topic = getData("topic.txt");
+  if (topic.length() == 0)
+  {
+    randomizeMQTTTopic();
+    topic = getData("topic.txt");
+  }
 
   SerialAT.print("AT+MQTTPUB=\"" + topic + "\",\"" + payload + "\",0,0,1\r");
   ok_status = false;
@@ -404,4 +410,17 @@ void GPRSMQTTPublish(String payload)
       GPRSMQTTPublish(payload);
     }
   }
+}
+
+void oledHeader()
+{
+  String topic = getData("topic.txt");
+  String signal_data = sendAT("AT+CSQ");
+  String raw_data = splitString(signal_data, ':', 1);
+  raw_data.replace(" ", "");
+  int signal_strength = splitString(raw_data, ',').toInt();
+  float percent_signal_strength = (signal_strength / 31) * 100;
+
+  clearScreen();
+  println("Topic : " + topic + "\n");
 }

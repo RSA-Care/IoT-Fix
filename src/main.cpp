@@ -19,8 +19,9 @@ void setup()
   Serial.begin(115200);
 
   oledBegin();
-  dhtBegin();
   A9GBegin();
+  SPIFFSBegin();
+  dhtBegin();
   WiFibegin(SSID, PASS);
 
   /*
@@ -56,12 +57,19 @@ void loop()
   gpsReading gps = getGPS();  // getting gps data
   DhtReading dht = dhtRead(); // getting dht data
 
+  // clearScreen();
+  oledHeader();
+  println("Latitude: " + gps.latitude);
+  println("Longitude: " + gps.longitude);
+  println("Temperature: " + String(dht.temperatureC));
+  println("Humidity: " + String(dht.humidity));
+
+  String payload = gps.longitude + "," + gps.latitude + "," + String(dht.temperatureC) + "," + String(dht.humidity);
+
   if (checkWiFiConnection()) // check if WiFi is connected
   {
     if (MQTTConnection()) // checking mqtt connection
     {
-      String payload = gps.longitude + "," + gps.latitude + "," + String(dht.temperatureC) + "," + String(dht.humidity);
-
       publish(payload.c_str());
     }
     else
@@ -71,20 +79,8 @@ void loop()
   }
   else
   {
-    String payload = gps.longitude + "," + gps.latitude + "," + String(dht.temperatureC) + "," + String(dht.humidity);
     GPRSMQTTPublish(payload);
   }
-  // else
-  // {
-  //   WiFiReconnect();
-  // }
 
-  delay(3000);
-
-  clearScreen();
-  println("Latitude: " + gps.latitude);
-  println("Longitude: " + gps.longitude);
-  println("Temperature: " + String(dht.temperatureC));
-  println("Humidity: " + String(dht.humidity));
-  delay(7000);
+  delay(10000);
 }

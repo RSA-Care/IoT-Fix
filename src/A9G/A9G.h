@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "../OLED/OLED.h"
+#include "Data/DataHandler.h"
 
 // Your GPRS credentials, if any
 const char apn[] = "internet";
@@ -26,5 +27,6 @@ gpsReading getGPS();
 
 // MQTT Functions
 void GPRSMQTTPublish(String payload);
+void oledHeader();
 
 #endif // A9G_h
