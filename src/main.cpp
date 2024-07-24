@@ -8,9 +8,6 @@
 #define SSID "Abbey"
 #define PASS "abbey123"
 
-// #define SSID "AHDA 4434"
-// #define PASS "Ahda@hotspot"
-
 // #define SSID "Apaweh"
 // #define PASS "langsungmasuk"
 
@@ -19,30 +16,11 @@ void setup()
   Serial.begin(115200);
 
   oledBegin();
-  A9GBegin();
   SPIFFSBegin();
+  A9GBegin();
   dhtBegin();
-  WiFibegin(SSID, PASS);
 
-  /*
-  Check if wifi is connected, if not then use gsm
-  */
-  if (WiFi.status() == WL_CONNECTED)
-  {
-    IPAddress ip_local = WiFi.localIP();
-    clearScreen();
-    println(ip_local.toString());
-    println("Starting MQTT.");
-    delay(1000);
-    MQTTbegin();
-  }
-  else
-  {
-    clearScreen();
-    println("WiFi not connected.\nStarting GSM.");
-    delay(1000);
-    GPRScheckConnection();
-  }
+  // WiFibegin(SSID, PASS);
 
   GPSbegin(); // Starting GPS
 
@@ -67,21 +45,7 @@ void loop()
 
   String payload = gps.longitude + "," + gps.latitude + "," + String(dht.temperatureC) + "," + String(dht.humidity);
 
-  if (WiFi.isConnected()) // check if WiFi is connected
-  {
-    if (MQTTConnection()) // checking mqtt connection
-    {
-      publish(payload.c_str());
-    }
-    else
-    {
-      MQTTReconnect();
-    }
-  }
-  else
-  {
-    GPRSMQTTPublish(payload);
-  }
+  GPRSMQTTPublish(payload);
 
   delay(10000);
 }

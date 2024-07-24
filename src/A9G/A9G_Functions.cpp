@@ -26,6 +26,12 @@ bool reset_A9G()
       {
         ready = true;
       }
+      else if (response.indexOf("NO SIM CARD") != -1)
+      {
+        Serial.println("NO SIM CARD");
+        sim = false;
+        ready = true;
+      }
     }
     delay(500);
   }
@@ -67,6 +73,12 @@ void A9GBegin()
       {
         ready = true;
       }
+      else if (response.indexOf("NO SIM CARD") != -1)
+      {
+        Serial.println("NO SIM CARD");
+        sim = false;
+        ready = true;
+      }
     }
     delay(500);
   }
@@ -96,17 +108,22 @@ void A9GBegin()
   delay(1000);
 
   // Checking SIM Card Status.
-  String cpin = sendAT("AT+CPIN?");
-  if (cpin.indexOf("+CPIN:READY") != -1)
+  // String cpin = sendAT("AT+CPIN?");
+  // if (cpin.indexOf("+CPIN:READY") != -1)
+  // {
+  //   sim = true;
+  //   println("SIM Card ready to use");
+  // }
+  // else
+  // {
+  //   clearScreen();
+  //   println("[ ! ] No SIM Card detected.");
+  //   delay(10000);
+  //   return;
+  // }
+
+  if (!sim)
   {
-    sim = true;
-    println("SIM Card ready to use");
-  }
-  else
-  {
-    clearScreen();
-    println("[ ! ] No SIM Card detected.");
-    delay(10000);
     return;
   }
 
@@ -136,12 +153,12 @@ void A9GBegin()
   else if (cops.indexOf("+COPS: 1") >= 0)
   {
     println("Operator selection: Manual");
-    sendAT("AT+COPS=0");
+    delay(30000);
   }
   else if (cops.indexOf("+COPS: 2"))
   {
     println("Operator selection: Deregistered");
-    sendAT("AT+COPS=0");
+    delay(30000);
   }
   else
   {
