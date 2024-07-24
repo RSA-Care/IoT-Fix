@@ -107,30 +107,15 @@ void A9GBegin()
   sendAT();
   delay(1000);
 
-  // Checking SIM Card Status.
-  // String cpin = sendAT("AT+CPIN?");
-  // if (cpin.indexOf("+CPIN:READY") != -1)
-  // {
-  //   sim = true;
-  //   println("SIM Card ready to use");
-  // }
-  // else
-  // {
-  //   clearScreen();
-  //   println("[ ! ] No SIM Card detected.");
-  //   delay(10000);
-  //   return;
-  // }
-
   if (!sim)
   {
     return;
   }
 
-  sendAT("ATI");
-
   // Set result error message.
   sendAT("AT+CMEE=2");
+
+  sendAT("ATI");
 
   // Checking signal
   String csq = sendAT("AT+CSQ");
@@ -166,24 +151,25 @@ void A9GBegin()
   }
 
   // Checking for network connection.
-  String creg = sendAT("AT+CREG?");
-  if (creg.indexOf("+CREG: 1,1") >= 0)
-  {
-    Serial.println("[ = ] INFO: SIM registered.");
-    String cgatt = sendAT("AT+CGATT?");
-    String cgact = sendAT("AT+CGACT?"); // Check if PDP context is active
-    if (cgact.indexOf("+CGACT: 0,0") >= 0)
-    {
-      Serial.println("[ = ] INFO: PDP context is not active.");
-      String cgact_set = sendAT("AT+CGACT=1,1"); // Activate
-    }
+  GPRScheckConnection();
+  // String creg = sendAT("AT+CREG?");
+  // if (creg.indexOf("+CREG: 1,1") >= 0)
+  // {
+  //   Serial.println("[ = ] INFO: SIM registered.");
+  //   String cgatt = sendAT("AT+CGATT?");
+  //   String cgact = sendAT("AT+CGACT?"); // Check if PDP context is active
+  //   if (cgact.indexOf("+CGACT: 0,0") >= 0)
+  //   {
+  //     Serial.println("[ = ] INFO: PDP context is not active.");
+  //     String cgact_set = sendAT("AT+CGACT=1,1"); // Activate
+  //   }
 
-    return;
-  }
-  else
-  {
-    Serial.println("[ = ] ERROR: SIM unregistered.");
-  }
+  //   return;
+  // }
+  // else
+  // {
+  //   Serial.println("[ = ] ERROR: SIM unregistered.");
+  // }
 }
 
 void getInfo()
@@ -320,35 +306,72 @@ gpsReading getGPS()
 
 bool GPRScheckConnection()
 {
-  Serial.println("Checking connection...");
-  SerialAT.print("AT+PING=1.1.1.1\r");
+  bool state = false;
 
-  bool packets = false;
-  bool error = false;
-  int lose;
+  sim = sendAT("AT+CPIN?").indexOf("READY") != -1 ? true : false;
 
-  while (!packets && !error)
+  String operatorRegistration = sendAT("AT+COPS?");
+  if (operatorRegistration.indexOf("+COPS: 2") != -1)
   {
-    while (SerialAT.available())
-    {
-      String response = SerialAT.readString();
-      Serial.println(response);
-      if (response.indexOf("Packets: ") >= 0)
-      {
-        packets = true;
-        lose = response.substring(response.indexOf("<") + 1, response.indexOf("%")).toInt();
-      }
-      if (response.indexOf("+CME ERROR:") >= 0)
-      {
-        lose = 100;
-        error = true;
-      }
-    }
-    delay(500);
+    state = false;
+    Serial.println("=== Deregistered from Network ===");
+    Serial.println("+COPS: 2");
+    return state;
+  }
+  else if (operatorRegistration.indexOf("+COPS: 3") != -1)
+  {
+    state = false;
+    Serial.println("=== Set only, do not attempt registration or deregistration ===");
+    Serial.println("+COPS: 3");
+    return state;
+  }
+  else if (operatorRegistration.indexOf("+COPS: 1") != -1)
+  {
+    state = false;
+    Serial.println("=== Manual mode ===");
+    Serial.println("+COPS: 1");
+    Serial.println("Using mode 4, if manual mode failed will switch to automatic mode");
+    sendAT("AT+COPS=4");
+    return state;
   }
 
-  Serial.println("Package lose: " + String(lose) + "%");
-  return packets;
+  String registerStatus = sendAT("AT+CREG?");
+  if (registerStatus.indexOf("1,1") != -1)
+  {
+    Serial.println("[ + ] Network registration enabled.");
+    Serial.println("[ + ] Home network registered.");
+  }
+  else
+  {
+    state = false;
+    Serial.println("[ - ] Network not registered.");
+    return state;
+  }
+
+  String pdpContext = sendAT("AT+CGACT?");
+  if (pdpContext.indexOf("1,1") != -1)
+  {
+    Serial.println("[ + ] PDP context activated.");
+    state = true;
+  }
+  else if (pdpContext.indexOf("0,1") != -1 || pdpContext.indexOf("0,0") != -1)
+  {
+    Serial.println("[ - ] PDP context not activated.");
+    String activatePDP = sendAT("AT+CGACT=1,1");
+    Serial.println(activatePDP);
+    if (activatePDP.indexOf("OK") != -1)
+    {
+      Serial.println("[ + ] PDP context activated.");
+      state = true;
+    }
+    else
+    {
+      Serial.println("[ - ] PDP context not activated.");
+      state = false;
+    }
+  }
+
+  return state;
 }
 
 bool MQTT_Connection()
