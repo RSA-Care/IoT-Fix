@@ -24,24 +24,19 @@ void setup()
 
   GPSbegin(); // Starting GPS
 
-  clearScreen();
-  println("=== Startup Finished");
-  println(statusCheck());
   delay(2000);
+  A9G_Data gprs = deviceInfo(); // A9G Device info
+  header(String(gprs.signalStrength), getData("topic.txt"));
 }
 
 void loop()
 {
-  A9G_Data gprs = deviceInfo(); // A9G Device info
-  gpsReading gps = getGPS();    // getting gps data
-  DhtReading dht = dhtRead();   // getting dht data
+  gpsReading gps = getGPS();  // getting gps data
+  DhtReading dht = dhtRead(); // getting dht data
 
   // clearScreen();
-  header(String(gprs.signalStrength), getData("topic.txt"));
-  println("Latitude: " + gps.latitude);
-  println("Longitude: " + gps.longitude);
-  println("Temperature: " + String(dht.temperatureC));
-  println("Humidity: " + String(dht.humidity));
+  gpsDisplay(String(gps.latitude), String(gps.longitude));
+  dhtDisplay(String(dht.temperatureC), String(dht.humidity));
 
   String payload = gps.longitude + "," + gps.latitude + "," + String(dht.temperatureC) + "," + String(dht.humidity);
 

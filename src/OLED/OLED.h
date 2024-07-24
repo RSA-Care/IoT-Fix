@@ -13,5 +13,7 @@ void print(String message);
 void println(String message);
 void clearScreen();
 void header(String signal, String topic);
+void gpsDisplay(String latitude, String longitude);
+void dhtDisplay(String temperature, String humidity);
 
 #endif // OLED_h

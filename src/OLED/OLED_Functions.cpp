@@ -68,19 +68,53 @@ void println(String message)
   display.display();
 }
 
+// Execute only once
 void header(String signal, String topic)
 {
   clearScreen();
   String text = "DST Tracker";
   int width = display.width();
-  int height = display.height();
-  int box_height = 13;
+  int box_height = 14;
   display.drawRect(0, 0, width, box_height, SSD1306_WHITE);
-  display.setCursor(2, 3);
+  display.setCursor(3, 3);
   display.print(text);
-  display.setCursor(display.width() - 1 - (topic.length() * 6), 3);
+  display.setCursor(display.width() - 3 - (topic.length() * 6), 3);
   display.println(topic);
 
-  display.setCursor(display.getCursorX(), display.getCursorY() + 5);
+  // gps data
+  display.setCursor(0, box_height + 2);
+  display.print("Latitude");
+  display.setCursor(SCREEN_WIDTH / 2, box_height + 2);
+  display.print("Longitude");
+
+  // dht data
+  display.setCursor(0, 40);
+  display.println("Temp");
+  display.println("Humidity");
+
+  display.display();
+}
+
+// After initialization only
+void gpsDisplay(String latitude, String longitude)
+{
+  int cursorHeight = 24;
+  display.setCursor(0, cursorHeight);
+  display.print(latitude);
+  display.setCursor(SCREEN_WIDTH / 2, cursorHeight);
+  display.print(longitude);
+  display.display();
+}
+
+void dhtDisplay(String temperature, String humidity)
+{
+  int cursorWidth = SCREEN_WIDTH / 2;
+  int cursorHeight = 40;
+
+  display.setCursor(cursorWidth, cursorHeight);
+  display.print(temperature + " C");
+  display.setCursor(cursorWidth, cursorHeight + 8);
+  display.print(humidity + " %");
+
   display.display();
 }
