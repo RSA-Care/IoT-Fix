@@ -96,7 +96,7 @@ void A9GBegin()
 
   if (!ready)
   {
-    println("Response not detected.");
+    println("Response not detected");
     println("Resetting A9G...");
     // bool reset = reset_A9G();
     if (reset_A9G())
@@ -113,7 +113,6 @@ void A9GBegin()
   Serial.print(start_duration / 1000);
   Serial.println(" s");
   delay(3000);
-  clearScreen();
 
   sendAT();
   delay(1000);
@@ -123,8 +122,11 @@ void A9GBegin()
 
   if (!sim)
   {
+    println("NO SIM CARD DETECTED");
     return;
   }
+
+  println("SIM card ready to use, please wait.....");
 
   sendAT("ATI");
 
