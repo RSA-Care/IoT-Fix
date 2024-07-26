@@ -2,14 +2,7 @@
 #include "OLED/OLED.h"
 #include "DHT22/DHT22.h"
 #include "A9G/A9G.h"
-#include "WiFi/WiFiconn.h"
 #include "MQTT/MQTT.h"
-
-#define SSID "Abbey"
-#define PASS "abbey123"
-
-// #define SSID "Apaweh"
-// #define PASS "langsungmasuk"
 
 void setup()
 {
@@ -19,8 +12,6 @@ void setup()
   SPIFFSBegin();
   A9GBegin();
   dhtBegin();
-
-  // WiFibegin(SSID, PASS);
 
   GPSbegin(); // Starting GPS
 

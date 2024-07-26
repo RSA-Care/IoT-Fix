@@ -262,6 +262,13 @@ gpsReading getGPS()
 
   if (gps_data.indexOf("GPS NOT FIX NOW") != -1 || gps_data.indexOf("ERROR") != -1)
   {
+    Serial.println(gps_data);
+    Serial.println("Defaulting to last known location.");
+
+    String data = getData("gps.txt");
+    String temp_data = splitString(data, '\n', 1);
+    gps.latitude = splitString(temp_data, ',');
+    gps.longitude = splitString(temp_data, ',', 1);
     return gps;
   }
 
@@ -272,6 +279,8 @@ gpsReading getGPS()
 
   gps.latitude = lat;
   gps.longitude = lon;
+
+  saveGPSData(gps);
 
   return gps;
 }
@@ -436,4 +445,11 @@ A9G_Data deviceInfo()
   device.errorRate = splitString(raw_data, ',').toInt();
 
   return device;
+}
+
+bool saveGPSData(gpsReading gps)
+{
+  String data = "latitude, longitude\n";
+  data += String(gps.latitude) + ", " + String(gps.longitude);
+  return saveData(data, "gps.txt");
 }
