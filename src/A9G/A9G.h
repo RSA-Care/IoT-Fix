@@ -30,6 +30,7 @@ void A9GReconnect();
 bool GPSbegin();
 bool GPRScheckConnection();
 bool internetCheck();
+bool saveGPSData(gpsReading gps);
 A9G_Data deviceInfo();
 gpsReading getGPS();
 
