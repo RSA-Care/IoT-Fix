@@ -100,7 +100,7 @@ void gpsDisplay(String latitude, String longitude)
 {
   int cursorHeight = 24;
 
-  display.fillRect(0, cursorHeight - 8, SCREEN_WIDTH, cursorHeight, BLACK);
+  display.fillRect(0, cursorHeight, SCREEN_WIDTH, 8, BLACK);
 
   display.setCursor(0, cursorHeight);
   display.print(latitude);
@@ -114,7 +114,7 @@ void dhtDisplay(String temperature, String humidity)
   int cursorWidth = SCREEN_WIDTH / 2;
   int cursorHeight = 40;
 
-  display.fillRect(cursorWidth, cursorHeight - 8, SCREEN_WIDTH / 2, SCREEN_HEIGHT, BLACK);
+  display.fillRect(cursorWidth, cursorHeight, SCREEN_WIDTH / 2, SCREEN_HEIGHT, BLACK);
 
   display.setCursor(cursorWidth, cursorHeight);
   display.print(temperature + " C");
