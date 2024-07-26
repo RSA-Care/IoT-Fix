@@ -5,7 +5,7 @@
 TinyGPSPlus _gps;
 HardwareSerial SerialAT(2);
 
-bool sim = false;
+bool sim = true;
 bool internet = false;
 bool GPSstate = false;
 
@@ -16,7 +16,7 @@ bool reset_A9G()
   startTime = millis();
   SerialAT.print("AT+RST=1\r");
   bool ready = false;
-  while (!ready && (millis() - startTime <= 120000))
+  while (!ready && (millis() - startTime <= 240000))
   {
     while (SerialAT.available())
     {
@@ -24,6 +24,7 @@ bool reset_A9G()
       Serial.println(response);
       if (response.indexOf("READY") != -1)
       {
+        sim = true;
         ready = true;
       }
       else if (response.indexOf("NO SIM CARD") != -1)
@@ -107,13 +108,13 @@ void A9GBegin()
   sendAT();
   delay(1000);
 
+  // Set result error message.
+  sendAT("AT+CMEE=2");
+
   if (!sim)
   {
     return;
   }
-
-  // Set result error message.
-  sendAT("AT+CMEE=2");
 
   sendAT("ATI");
 
