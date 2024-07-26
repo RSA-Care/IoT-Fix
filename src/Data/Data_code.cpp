@@ -25,10 +25,10 @@ bool SPIFFSBegin()
 
 String getData(String filename)
 {
-  // if (filename.indexOf("/") != 0)
-  // {
-  //   filename = "/" + filename;
-  // }
+  if (filename[0] != '/')
+  {
+    filename = "/" + filename;
+  }
 
   bool fileCheck = SPIFFS.exists(filename);
   if (!fileCheck)
@@ -83,6 +83,11 @@ String getData(String filename)
 
 bool saveData(String data, String filename)
 {
+  if (filename[0] != '/')
+  {
+    filename = "/" + filename;
+  }
+
   File file = SPIFFS.open(filename, FILE_WRITE);
 
   if (!file)
