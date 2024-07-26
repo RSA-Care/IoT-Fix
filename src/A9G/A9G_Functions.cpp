@@ -11,6 +11,16 @@ bool GPSstate = false;
 
 unsigned long startTime = 0;
 
+bool internetCheck()
+{
+  if (!internet)
+  {
+    return GPRScheckConnection();
+  }
+
+  return true;
+}
+
 bool reset_A9G()
 {
   startTime = millis();
@@ -130,47 +140,8 @@ void A9GBegin()
     Serial.println("Bit Error Rate: " + ber);
   }
 
-  // Checking Operator Selection.
-  String cops = sendAT("AT+COPS?");
-  if (cops.indexOf("+COPS: 0") >= 0)
-  {
-    println("Operator selection: Automatic");
-  }
-  else if (cops.indexOf("+COPS: 1") >= 0)
-  {
-    println("Operator selection: Manual");
-    delay(30000);
-  }
-  else if (cops.indexOf("+COPS: 2"))
-  {
-    println("Operator selection: Deregistered");
-    delay(30000);
-  }
-  else
-  {
-    println("Operator selection: Unknown");
-  }
-
   // Checking for network connection.
   GPRScheckConnection();
-  // String creg = sendAT("AT+CREG?");
-  // if (creg.indexOf("+CREG: 1,1") >= 0)
-  // {
-  //   Serial.println("[ = ] INFO: SIM registered.");
-  //   String cgatt = sendAT("AT+CGATT?");
-  //   String cgact = sendAT("AT+CGACT?"); // Check if PDP context is active
-  //   if (cgact.indexOf("+CGACT: 0,0") >= 0)
-  //   {
-  //     Serial.println("[ = ] INFO: PDP context is not active.");
-  //     String cgact_set = sendAT("AT+CGACT=1,1"); // Activate
-  //   }
-
-  //   return;
-  // }
-  // else
-  // {
-  //   Serial.println("[ = ] ERROR: SIM unregistered.");
-  // }
 }
 
 void getInfo()
@@ -372,6 +343,7 @@ bool GPRScheckConnection()
     }
   }
 
+  internet = state;
   return state;
 }
 

@@ -29,6 +29,7 @@ void getInfo();
 void A9GReconnect();
 bool GPSbegin();
 bool GPRScheckConnection();
+bool internetCheck();
 A9G_Data deviceInfo();
 gpsReading getGPS();
 

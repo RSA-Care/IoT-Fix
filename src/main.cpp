@@ -31,6 +31,7 @@ void setup()
 
 void loop()
 {
+  internetCheck();
   gpsReading gps = getGPS();  // getting gps data
   DhtReading dht = dhtRead(); // getting dht data
 
