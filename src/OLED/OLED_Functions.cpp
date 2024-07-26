@@ -100,7 +100,7 @@ void gpsDisplay(String latitude, String longitude)
 {
   int cursorHeight = 24;
 
-  display.fillRect(0, cursorHeight, SCREEN_WIDTH, cursorHeight, BLACK);
+  display.fillRect(0, cursorHeight, SCREEN_WIDTH, 8, BLACK);
 
   display.setCursor(0, cursorHeight);
   display.print(latitude);
