@@ -116,7 +116,7 @@ bool randomizeMQTTTopic(int length)
   println("TOPIC : " + randomText);
   println("Saving topic.");
 
-  if (saveData(randomText, "/topic.txt"))
+  if (saveData(randomText, "topic.txt"))
   {
     println("Topic saved successfully.");
     return true;
