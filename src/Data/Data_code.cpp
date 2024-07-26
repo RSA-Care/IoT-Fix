@@ -25,10 +25,10 @@ bool SPIFFSBegin()
 
 String getData(String filename)
 {
-  if (filename.indexOf("/") != 0)
-  {
-    filename = "/" + filename;
-  }
+  // if (filename.indexOf("/") != 0)
+  // {
+  //   filename = "/" + filename;
+  // }
 
   bool fileCheck = SPIFFS.exists(filename);
   if (!fileCheck)
