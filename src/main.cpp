@@ -30,7 +30,7 @@ void loop()
   gpsDisplay(String(gps.latitude), String(gps.longitude));
   dhtDisplay(String(dht.temperatureC), String(dht.humidity));
 
-  String payload = gps.longitude + "," + gps.latitude + "," + String(dht.temperatureC) + "," + String(dht.humidity);
+  String payload = gps.latitude + "," + gps.longitude + "," + String(dht.temperatureC) + "," + String(dht.humidity);
 
   GPRSMQTTPublish(payload);
 
